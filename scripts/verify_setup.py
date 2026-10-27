@@ -209,6 +209,20 @@ def run_checks():
         print(f"[FAIL] Standalone HTML Data Catalog tidak ditemukan: {html_catalog.relative_to(base_dir)}")
         checks_passed = False
 
+    # 10. Check Zero-Manual Automation & Master Launch Scripts
+    auto_scripts = [
+        (base_dir / "scripts" / "seed_chartdb.py", "ChartDB Automated Seeder"),
+        (base_dir / "scripts" / "seed_azimutt.py", "Azimutt Automated Seeder"),
+        (base_dir / "scripts" / "launch.py", "Single Master Orchestrator (launch.py)"),
+        (base_dir / "sources" / "autoload.html", "ChartDB Autoload Injector HTML")
+    ]
+    for script_p, label in auto_scripts:
+        if script_p.exists() and script_p.stat().st_size > 0:
+            print(f"[PASS] Skrip Otomasi Zero-Manual ditemukan: {label} ({script_p.name})")
+        else:
+            print(f"[FAIL] Skrip Otomasi Zero-Manual tidak ditemukan: {label} ({script_p.name})")
+            checks_passed = False
+
     print("=" * 75)
     if checks_passed:
         print("HASIL: SEMUA SPESIFIKASI TEKNIS & KEAMANAN TERVERIFIKASI 100% VALID")
