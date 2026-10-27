@@ -1,0 +1,65 @@
+name: Bank Raya DataOps & EDM CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  metadata-lint-and-audit:
+    name: Shift-Left Lint & EDM Hardening Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare Test Environment (Zero-Credential Safe)
+        run: |
+          cp .env.example .env
+
+      - name: Run Deterministic Transpiler & Shift-Left Linter
+        run: |
+          python scripts/sync_multiplatform_metadata.py
+
+      - name: Run Banking-Grade Hardening & Compliance Verification
+        run: |
+          python scripts/verify_setup.py
+
+      - name: Validate Generated Artifacts Integrity
+        run: |
+          test -s sources/bank_raya_unified_schema.json
+          test -s sources/chartdb_unified_import.sql
+          test -s layouts/bank_raya_domain_layouts.json
+          test -s azimutt-data/sources/bank_raya_unified_schema.json
+          test -s azimutt-data/layouts/bank_raya_domain_layouts.json
+          echo "All generated artifacts verified successfully."
+
+  docker-compose-validation:
+    name: Validate Docker Compose Banking Topology
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Test Environment
+        run: |
+          cp .env.example .env
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          docker compose config --quiet
+          echo "Docker Compose topology syntax is valid."
