@@ -1,0 +1,98 @@
+# ==============================================================================
+# Enterprise Data Management (EDM) - Banking Grade Topology
+# Services: ChartDB (Stateless) & Azimutt (Self-Hosted Segmented)
+# Security Policy: Zero-Credential-Exposure & Network Hardening
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. ChartDB Service: 100% Stateless ERD & Visual Diagramming
+  # ----------------------------------------------------------------------------
+  chartdb:
+    image: ghcr.io/chartdb/chartdb:latest
+    container_name: chartdb-app
+    restart: unless-stopped
+    ports:
+      # Port forwarding 8080:80 (akses via http://localhost:8080)
+      - "8080:80"
+    environment:
+      # Matikan telemetri dan tracking analitik eksternal
+      - DISABLE_ANALYTICS=${CHARTDB_DISABLE_ANALYTICS:-true}
+      # Sembunyikan fitur SaaS / ChartDB Cloud agar data skema tidak keluar
+      - VITE_HIDE_CHARTDB_CLOUD=${CHARTDB_HIDE_CLOUD:-true}
+      - NODE_ENV=production
+    # 100% Stateless Runtime: Tanpa persistent volume mount
+    networks:
+      - edm-secure-net
+
+  # ----------------------------------------------------------------------------
+  # 2. Azimutt Backend Database: Isolated PostgreSQL Metadata Storage
+  # ----------------------------------------------------------------------------
+  azimutt-db:
+    image: postgres:16-alpine
+    container_name: azimutt-backend-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AZIMUTT_DB_USER:-azimutt_bank_admin}
+      POSTGRES_PASSWORD: ${AZIMUTT_DB_PASSWORD:-azimutt_secure_password_bank_2026}
+      POSTGRES_DB: ${AZIMUTT_DB_NAME:-azimutt_metadata}
+    volumes:
+      - azimutt-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-azimutt_bank_admin} -d $${POSTGRES_DB:-azimutt_metadata}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Zero-Credential-Exposure: Port database TIDAK diekspos ke host (hanya internal)
+    networks:
+      - edm-secure-net
+
+  # ----------------------------------------------------------------------------
+  # 3. Azimutt Service: Self-Hosted Architecture with Separated Storage Volumes
+  # ----------------------------------------------------------------------------
+  azimutt:
+    image: ghcr.io/azimuttapp/azimutt:main
+    container_name: azimutt-app
+    restart: unless-stopped
+    depends_on:
+      azimutt-db:
+        condition: service_healthy
+    ports:
+      # Port forwarding ke port lokal 8000 (akses via http://localhost:8000)
+      - "8000:4000"
+    environment:
+      - PORT=4000
+      - PHX_SERVER=true
+      - PHX_HOST=${AZIMUTT_HOST:-localhost}
+      - DATABASE_URL=ecto://${AZIMUTT_DB_USER:-azimutt_bank_admin}:${AZIMUTT_DB_PASSWORD:-azimutt_secure_password_bank_2026}@azimutt-backend-db:5432/${AZIMUTT_DB_NAME:-azimutt_metadata}
+      - SECRET_KEY_BASE=${AZIMUTT_SECRET_KEY_BASE:-ajHLXv3RFH6JLQ6rDQ5_VKJez_IFFM7jBNjnh1hXrz15hHmZhEUSZdjXCXKRPZ3F7H5nzv62oMALuVXvPFAMEQ}
+      - AUTH_PASSWORD=true
+      - FILE_STORAGE_ADAPTER=local
+      - SENTRY=false
+      - SKIP_ONBOARDING_FUNNEL=true
+      - SKIP_EMAIL_CONFIRMATION=true
+      - PUBLIC_SITE=false
+    volumes:
+      # Volume terpisah 1: Sumber skema (JSON / SQL DDL statis per tim)
+      - ./azimutt-data/sources:/app/sources
+      # Volume terpisah 2: Layout dan diagram views per tim (mencegah overwrite saat sync)
+      - ./azimutt-data/layouts:/app/layouts
+      # Volume storage persistensi internal Azimutt
+      - ./azimutt-data/uploads:/app/bin/uploads
+    networks:
+      - edm-secure-net
+
+# ==============================================================================
+# Persistent Volumes (Internal Metadata Storage)
+# ==============================================================================
+volumes:
+  azimutt-db-data:
+    name: azimutt-db-data
+
+# ==============================================================================
+# Network Hardening: Topologi Bridge Internal Terisolasi (edm-secure-net)
+# ==============================================================================
+networks:
+  edm-secure-net:
+    name: edm-secure-net
+    driver: bridge
