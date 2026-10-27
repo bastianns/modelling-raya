@@ -107,11 +107,40 @@ modelling-raya/
 │   ├── sources/                                 # Cermin tersinkronisasi /app/sources
 │   ├── layouts/                                 # Cermin tersinkronisasi /app/layouts
 │   └── uploads/                                 # Volume internal uploads Azimutt
+├── docs/                                        # Output Dokumentasi Enterprise Offline
+│   └── data_dictionary.html                     # Kamus Data Interaktif Mandiri (Audit-Ready)
 ├── scripts/
 │   ├── sync_multiplatform_metadata.py           # Transpiler deterministik & Shift-Left Linter
+│   ├── generate_data_dictionary.py              # Generator Kamus Data HTML Standalone
+│   ├── watch_and_sync.py                        # Daemon Live-Reload otomatis saat edit file DDL
 │   └── verify_setup.py                          # Skrip audit hardening & validasi kepatuhan DAMA-DMBOK
 └── venv/                                        # Virtual environment Python lokal
 ```
+
+---
+
+## ⚡ 4 Skenario Use Case Otomasi Enterprise (DataOps)
+
+Sistem ini mendukung 4 siklus otomasi nyata di Bank Raya:
+
+### Use Case 1: Otomasi CI/CD & Gatekeeper PR (GitHub Actions)
+* **Kapan terjadi?** Saat developer / data engineer melakukan `git push` atau membuat *Pull Request* baru.
+* **Alur Automasi**: Pipeline [.github/workflows/data_ops_pipeline.yml](file:///D:/modelling-raya/.github/workflows/data_ops_pipeline.yml) otomatis berjalan di cloud.
+  1. Menjalankan linter untuk mendeteksi `WARN-01` s.d. `WARN-03`.
+  2. Memverifikasi struktur Docker Compose.
+  3. Mengarsip skema terbaru sebagai GitHub Actions artifact yang dapat diunduh dalam 1 klik.
+
+### Use Case 2: Otomasi Live-Reload saat Coding Lokal (`watch_and_sync.py`)
+* **Kapan terjadi?** Saat developer sedang merancang tabel baru di VS Code.
+* **Alur Automasi**: Cukup jalankan `python scripts/watch_and_sync.py`. Setiap kali menekan `Ctrl + S` pada file SQL/YAML di `inputs/multi_platform/`, skrip otomatis mentranspilasi skema, merefresh file volume Azimutt, dan mengupdate kamus data tanpa perlu ketik perintah terminal berulang kali.
+
+### Use Case 3: Otomasi Pembuatan Kamus Data HTML Offline untuk Auditor/Bisnis
+* **Kapan terjadi?** Saat tim Compliance, Auditor OJK, atau pimpinan divisi meminta laporan dokumentasi data tanpa ingin membuka Docker/terminal.
+* **Alur Automasi**: Jalankan `python scripts/generate_data_dictionary.py`. Menghasilkan satu file mandiri [docs/data_dictionary.html](file:///D:/modelling-raya/docs/data_dictionary.html) yang bisa langsung dibuka di browser Chrome/Edge secara offline, dilengkapi pencarian kolom, kamus data, dan diagram ERD Mermaid.
+
+### Use Case 4: Otomasi Sinkronisasi Silsilah ETL Warehouse (Airflow Lineage Sync)
+* **Kapan terjadi?** Setiap kali batch data mart BigQuery selesai diproses tengah malam oleh Apache Airflow.
+* **Alur Automasi**: Task akhir Airflow memicu sinkronisasi metadata sehingga tabel data mart dan metrik Superset di katalog data selalu terbaharui secara harian tanpa intervensi manual.
 
 ---
 

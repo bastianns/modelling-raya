@@ -157,4 +157,18 @@ HASIL: SEMUA SPESIFIKASI TEKNIS & KEAMANAN TERVERIFIKASI 100% VALID (26/26)
 | **Lineage Refresh** | Statis berdasarkan contoh file dbt & Airflow | Terintegrasi langsung dengan Webhook Airflow DAG `@daily` pasca-batch selesai. |
 
 ---
+
+## ⚡ Fase 6: Realisasi 4 Skenario Otomasi Enterprise (DataOps)
+
+Telah diimplementasikan rangkaian modul otomasi untuk menghapus kebutuhan intervensi manual:
+
+1. **Otomasi Live-Reload Saat Coding Lokal ([watch_and_sync.py](file:///D:/modelling-raya/scripts/watch_and_sync.py))**:
+   - Memantau folder `inputs/multi_platform/` secara real-time.
+   - Setiap kali file SQL/YAML disimpan (`Ctrl + S`), otomatis menjalankan transpiler, linter, dan mengupdate volume container Azimutt tanpa perlu mengetik perintah terminal berulang kali.
+2. **Otomasi Kamus Data HTML Offline ([generate_data_dictionary.py](file:///D:/modelling-raya/scripts/generate_data_dictionary.py))**:
+   - Menghasilkan berkas mandiri [docs/data_dictionary.html](file:///D:/modelling-raya/docs/data_dictionary.html) yang dapat dibuka langsung di browser Chrome/Edge tanpa Docker, dilengkapi fitur pencarian kolom real-time, kamus data lengkap, dan diagram ERD Mermaid.
+3. **Otomasi CI/CD & Gatekeeper PR ([.github/workflows/data_ops_pipeline.yml](file:///D:/modelling-raya/.github/workflows/data_ops_pipeline.yml))**:
+   - Menguji linter dan mengarsipkan seluruh katalog data sebagai GitHub Actions artifact yang siap diunduh dalam 1 klik.
+
+---
 *Laporan ini dipelihara secara otomatis sebagai bagian dari Tata Kelola Metadata Enterprise Bank Raya.*

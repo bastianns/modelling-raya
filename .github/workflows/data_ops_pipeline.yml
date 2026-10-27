@@ -34,6 +34,10 @@ jobs:
         run: |
           python scripts/sync_multiplatform_metadata.py
 
+      - name: Generate Standalone HTML Data Catalog
+        run: |
+          python scripts/generate_data_dictionary.py
+
       - name: Run Banking-Grade Hardening & Compliance Verification
         run: |
           python scripts/verify_setup.py
@@ -45,7 +49,18 @@ jobs:
           test -s layouts/bank_raya_domain_layouts.json
           test -s azimutt-data/sources/bank_raya_unified_schema.json
           test -s azimutt-data/layouts/bank_raya_domain_layouts.json
+          test -s docs/data_dictionary.html
           echo "All generated artifacts verified successfully."
+
+      - name: Archive Enterprise Data Management Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bank-raya-data-catalog
+          path: |
+            docs/data_dictionary.html
+            sources/bank_raya_unified_schema.json
+            sources/chartdb_unified_import.sql
+            layouts/bank_raya_domain_layouts.json
 
   docker-compose-validation:
     name: Validate Docker Compose Banking Topology

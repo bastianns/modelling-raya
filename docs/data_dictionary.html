@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Raya - Enterprise Data Dictionary & Catalog</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #0052cc;
+            --secondary: #172b4d;
+            --accent: #0065ff;
+            --bg: #f4f5f7;
+            --surface: #ffffff;
+            --border: #dfe1e6;
+            --text: #172b4d;
+            --muted: #6b778c;
+            --success: #36b37e;
+            --warning: #ffab00;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 24px;
+        }
+        .header {
+            background: linear-gradient(135deg, #0747a6, #0052cc);
+            color: white;
+            padding: 28px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,82,204,0.15);
+        }
+        .header h1 { font-size: 26px; margin-bottom: 6px; font-weight: 700; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .meta-badges { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .search-bar {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            background: var(--surface);
+        }
+        .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,82,204,0.2); }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .table-card {
+            background: var(--surface);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .table-header {
+            background: #fafbfc;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-title { font-size: 17px; font-weight: 700; color: var(--secondary); }
+        .table-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+        .table-badge {
+            background: #ebecf0;
+            color: var(--secondary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th { background: #fafbfc; font-weight: 600; color: var(--muted); }
+        tr:hover td { background: #f8f9fa; }
+        .type-pill {
+            background: #e6effc;
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .pk-icon { color: #ffab00; font-weight: bold; margin-right: 4px; }
+        .diagram-container {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .linter-box {
+            background: #fff8e6;
+            border-left: 4px solid var(--warning);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+        .linter-title { font-weight: 700; margin-bottom: 6px; color: #8f6b00; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
+        <p>Framework: DAMA-DMBOK V.2 | Standar Keamanan: Zero-Credential-Exposure</p>
+        <div class="meta-badges">
+            <span class="badge">Generated: 2026-10-27 13:17:48</span>
+            <span class="badge">Total Tabel: 8</span>
+            <span class="badge">Total Relasi: 4</span>
+            <span class="badge">Domain: Scoring, Reporting, Warehouse, BI</span>
+        </div>
+    </div>
+
+    <div class="linter-box">
+        <div class="linter-title">🛡️ Shift-Left Linter Integrity Summary:</div>
+        <div>• <b>WARN-01 (Orphan Tables):</b> <code>legacy.collateral_registers</code> & <code>datamart.rpt_slik_ojk</code> terdeteksi sebagai tabel snapshot/register independen.</div>
+        <div>• <b>WARN-02 (Type Divergence):</b> <code>channel.loan_disbursements.application_id (VARCHAR(36))</code> mereferensikan <code>scoring.credit_applications.application_id (UUID)</code> lintas engine.</div>
+        <div>• <b>WARN-03 (PK & Contracts):</b> 8/8 tabel memiliki Primary Key valid; kontrak dbt <code>not_null</code> 100% tervalidasi.</div>
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Cari nama tabel, nama kolom, tipe data, atau deskripsi bisnis..." onkeyup="filterCatalog()">
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dictionary')">📖 Kamus Data Lengkap (Data Dictionary)</button>
+        <button class="tab-btn" onclick="switchTab('erd')">📊 Visualisasi ERD (Mermaid)</button>
+    </div>
+
+    <div id="erdView" class="diagram-container" style="display: none;">
+        <h3 style="margin-bottom: 16px; color: var(--secondary);">Unified Entity-Relationship Diagram</h3>
+        <pre class="mermaid">
+erDiagram
+    channel_loan_disbursements {
+        BIGINT disbursement_id
+    }
+    channel_loan_disbursements {
+        VARCHAR_36_ application_id
+    }
+    channel_loan_disbursements {
+        VARCHAR_50_ partner_channel_code
+    }
+    channel_loan_disbursements {
+        VARCHAR_30_ account_destination
+    }
+    channel_loan_disbursements {
+        DECIMAL_18_2_ disbursement_amount
+    }
+    channel_loan_disbursements {
+        DECIMAL_10_2_ disbursement_fee
+    }
+    channel_loan_disbursements {
+        VARCHAR_20_ disbursement_status
+    }
+    channel_loan_disbursements {
+        VARCHAR_100_ channel_reference_id
+    }
+    channel_loan_disbursements {
+        TIMESTAMP disbursed_at
+    }
+    datamart_fct_credit_scoring {
+        STRING fact_id
+    }
+    datamart_fct_credit_scoring {
+        STRING application_id
+    }
+    datamart_fct_credit_scoring {
+        STRING customer_cif
+    }
+    datamart_fct_credit_scoring {
+        INT64 credit_score
+    }
+    datamart_fct_credit_scoring {
+        STRING risk_tier
+    }
+    datamart_fct_credit_scoring {
+        NUMERIC approved_amount
+    }
+    datamart_fct_credit_scoring {
+        STRUCT_model_version_STRING__probability_of_default_NUMERIC__score_cutoff_INT64_ scoring_details
+    }
+    datamart_fct_credit_scoring {
+        TIMESTAMP scoring_date
+    }
+    datamart_rpt_slik_ojk {
+        STRING report_id
+    }
+    datamart_rpt_slik_ojk {
+        STRING period_yyyymm
+    }
+    datamart_rpt_slik_ojk {
+        STRING account_number
+    }
+    datamart_rpt_slik_ojk {
+        STRING customer_cif
+    }
+    datamart_rpt_slik_ojk {
+        STRING collectibility_status
+    }
+    datamart_rpt_slik_ojk {
+        NUMERIC outstanding_balance
+    }
+    datamart_rpt_slik_ojk {
+        NUMERIC provision_amount
+    }
+    datamart_rpt_slik_ojk {
+        STRING submission_status
+    }
+    datamart_rpt_slik_ojk {
+        TIMESTAMP created_at
+    }
+    dataraw_raw_applications {
+        STRING raw_id
+    }
+    dataraw_raw_applications {
+        STRING payload_json
+    }
+    dataraw_raw_applications {
+        STRING source_system
+    }
+    dataraw_raw_applications {
+        INT64 kafka_offset
+    }
+    dataraw_raw_applications {
+        TIMESTAMP ingested_at
+    }
+    datastaging_stg_applications {
+        STRING application_id
+    }
+    datastaging_stg_applications {
+        STRING customer_cif
+    }
+    datastaging_stg_applications {
+        INT64 rule_id
+    }
+    datastaging_stg_applications {
+        NUMERIC requested_amount
+    }
+    datastaging_stg_applications {
+        STRING risk_tier
+    }
+    datastaging_stg_applications {
+        INT64 score_value
+    }
+    datastaging_stg_applications {
+        STRING status
+    }
+    datastaging_stg_applications {
+        TIMESTAMP ingested_at
+    }
+    legacy_collateral_registers {
+        INT collateral_id
+    }
+    legacy_collateral_registers {
+        NVARCHAR_20_ customer_cif
+    }
+    legacy_collateral_registers {
+        NVARCHAR_50_ collateral_type
+    }
+    legacy_collateral_registers {
+        NVARCHAR_100_ certificate_number
+    }
+    legacy_collateral_registers {
+        NVARCHAR_150_ owner_name
+    }
+    legacy_collateral_registers {
+        DECIMAL_18_2_ appraisal_value
+    }
+    legacy_collateral_registers {
+        DECIMAL_18_2_ liquidation_value
+    }
+    legacy_collateral_registers {
+        NVARCHAR_10_ custody_branch_code
+    }
+    legacy_collateral_registers {
+        BIT is_verified
+    }
+    legacy_collateral_registers {
+        DATETIME2 registered_at
+    }
+    scoring_credit_applications {
+        UUID application_id
+    }
+    scoring_credit_applications {
+        VARCHAR_20_ customer_cif
+    }
+    scoring_credit_applications {
+        INT rule_id
+    }
+    scoring_credit_applications {
+        NUMERIC_18_2_ requested_amount
+    }
+    scoring_credit_applications {
+        INT tenor_months
+    }
+    scoring_credit_applications {
+        VARCHAR_5_ risk_tier
+    }
+    scoring_credit_applications {
+        INT score_value
+    }
+    scoring_credit_applications {
+        VARCHAR_20_ application_status
+    }
+    scoring_credit_applications {
+        TIMESTAMPTZ submitted_at
+    }
+    scoring_credit_applications {
+        TIMESTAMPTZ approved_at
+    }
+    scoring_scorecard_rules {
+        SERIAL rule_id
+    }
+    scoring_scorecard_rules {
+        VARCHAR_50_ rule_code
+    }
+    scoring_scorecard_rules {
+        VARCHAR_100_ rule_name
+    }
+    scoring_scorecard_rules {
+        NUMERIC_5_2_ weight_percentage
+    }
+    scoring_scorecard_rules {
+        INT cutoff_score
+    }
+    scoring_scorecard_rules {
+        BOOLEAN is_active
+    }
+    scoring_scorecard_rules {
+        TIMESTAMPTZ created_at
+    }
+    scoring_scorecard_rules {
+        TIMESTAMPTZ updated_at
+    }
+    scoring_credit_applications }o--|| scoring_scorecard_rules : "fk_credit_app_scorecard"
+    channel_loan_disbursements }o--|| scoring_credit_applications : "fk_disbursement_scoring_app"
+    datastaging_stg_applications }o--|| dataraw_raw_applications : "fk_stg_raw_applications"
+    datamart_fct_credit_scoring }o--|| datastaging_stg_applications : "fk_fct_stg_applications"
+        </pre>
+    </div>
+
+    <div id="dictionaryView">
+
+        <div class="table-card" data-table="channel.loan_disbursements">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">channel.loan_disbursements</div>
+                    <div class="table-desc">Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya</div>
+                </div>
+                <span class="table-badge">channel</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> disbursement_id</strong></td>
+                        <td><span class="type-pill">BIGINT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Surrogate primary key auto increment</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>application_id</strong></td>
+                        <td><span class="type-pill">VARCHAR(36)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>ID Pengajuan Kredit referensi ke scoring core engine</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>partner_channel_code</strong></td>
+                        <td><span class="type-pill">VARCHAR(50)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Kode identifikasi mitra agregator / keagenan digital</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>account_destination</strong></td>
+                        <td><span class="type-pill">VARCHAR(30)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor rekening tujuan pencairan dana nasabah</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>disbursement_amount</strong></td>
+                        <td><span class="type-pill">DECIMAL(18,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nominal dana yang dicairkan ke nasabah</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>disbursement_fee</strong></td>
+                        <td><span class="type-pill">DECIMAL(10,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Biaya administrasi / transfer pencairan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>disbursement_status</strong></td>
+                        <td><span class="type-pill">VARCHAR(20)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Status pencairan: PENDING, SUCCESS, FAILED</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>channel_reference_id</strong></td>
+                        <td><span class="type-pill">VARCHAR(100)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor referensi settlement transaksi mitra</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>disbursed_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu eksekusi pencairan pinjaman</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="datamart.fct_credit_scoring">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">datamart.fct_credit_scoring</div>
+                    <div class="table-desc">Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]</div>
+                </div>
+                <span class="table-badge">datamart</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> fact_id</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Surrogate key fakta penilaian kredit</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>application_id</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Relasi foreign key ke tabel staging pengajuan pinjaman</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>customer_cif</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor CIF nasabah yang dinilai skor kreditnya</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>credit_score</strong></td>
+                        <td><span class="type-pill">INT64</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nilai skor kredit terhitung (skala 300 - 850)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>risk_tier</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Klasifikasi profil risiko nasabah (TIER_1 s.d. TIER_5)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>approved_amount</strong></td>
+                        <td><span class="type-pill">NUMERIC</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nominal plafond yang disetujui</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>scoring_details</strong></td>
+                        <td><span class="type-pill">STRUCT<model_version STRING, probability_of_default NUMERIC, score_cutoff INT64></span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Struktur detail model statistik machine learning</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>scoring_date</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Tanggal dan waktu evaluasi credit scoring</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="datamart.rpt_slik_ojk">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">datamart.rpt_slik_ojk</div>
+                    <div class="table-desc">Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]</div>
+                </div>
+                <span class="table-badge">datamart</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> report_id</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Primary key baris pelaporan bulanan SLIK OJK</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>period_yyyymm</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Periode akuntansi pelaporan format tahun-bulan (YYYYMM)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>account_number</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor rekening fasilitas kredit debitur</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>customer_cif</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor CIF nasabah debitur</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>collectibility_status</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Kolektibilitas debitur per POJK (1: Lancar, 2: DPK, 3: Kurang Lancar, 4: Diragukan, 5: Macet)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>outstanding_balance</strong></td>
+                        <td><span class="type-pill">NUMERIC</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Total saldo pokok pinjaman aktif</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>provision_amount</strong></td>
+                        <td><span class="type-pill">NUMERIC</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Cadangan Kerugian Penurunan Nilai (CKPN)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>submission_status</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Status pelaporan ke OJK (PENDING, SUBMITTED, APPROVED)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>created_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu pembentukan data agregasi</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="dataraw.raw_applications">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">dataraw.raw_applications</div>
+                    <div class="table-desc">Penyimpanan data mentah pengajuan kredit dari CDC message broker | dbt Source: Data mentah payload pengajuan kredit dari message broker CDC</div>
+                </div>
+                <span class="table-badge">dataraw</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> raw_id</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Surrogate identifier mentah ingestion data</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>payload_json</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>JSON string representasi event transaksi pengajuan kredit</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>source_system</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>kafka_offset</strong></td>
+                        <td><span class="type-pill">INT64</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Offset Kafka message partition</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>ingested_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu ingestion ke BigQuery</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="datastaging.stg_applications">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">datastaging.stg_applications</div>
+                    <div class="table-desc">Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]</div>
+                </div>
+                <span class="table-badge">datastaging</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> application_id</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>ID pengajuan pinjaman (UUID string terstandarisasi)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>customer_cif</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor identifikasi unik nasabah (Customer Information File)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>rule_id</strong></td>
+                        <td><span class="type-pill">INT64</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>ID rule scorecard kredit</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>requested_amount</strong></td>
+                        <td><span class="type-pill">NUMERIC</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nominal pengajuan plafond kredit dalam Rupiah</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>risk_tier</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Kategori risiko kredit</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>score_value</strong></td>
+                        <td><span class="type-pill">INT64</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Nilai skor kredit evaluasi engine</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>status</strong></td>
+                        <td><span class="type-pill">STRING</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Status verifikasi pengajuan kredit</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>ingested_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Waktu normalisasi staging</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="legacy.collateral_registers">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">legacy.collateral_registers</div>
+                    <div class="table-desc">Master registrasi agunan kredit legacy yang dijamin oleh nasabah</div>
+                </div>
+                <span class="table-badge">legacy</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> collateral_id</strong></td>
+                        <td><span class="type-pill">INT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Identity primary key agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>customer_cif</strong></td>
+                        <td><span class="type-pill">NVARCHAR(20)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor CIF nasabah pemilik agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>collateral_type</strong></td>
+                        <td><span class="type-pill">NVARCHAR(50)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Jenis agunan (SHM, BPKB, Deposito)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>certificate_number</strong></td>
+                        <td><span class="type-pill">NVARCHAR(100)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor sertifikat bukti kepemilikan agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>owner_name</strong></td>
+                        <td><span class="type-pill">NVARCHAR(150)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nama pemilik yang tertera di sertifikat agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>appraisal_value</strong></td>
+                        <td><span class="type-pill">DECIMAL(18,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nilai pasar hasil taksasi agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>liquidation_value</strong></td>
+                        <td><span class="type-pill">DECIMAL(18,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nilai likuidasi agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>custody_branch_code</strong></td>
+                        <td><span class="type-pill">NVARCHAR(10)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Kode unit cabang penyimpanan fisik dokumen jaminan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>is_verified</strong></td>
+                        <td><span class="type-pill">BIT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Flag verifikasi keaslian dokumen agunan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>registered_at</strong></td>
+                        <td><span class="type-pill">DATETIME2</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Waktu pencatatan agunan</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="scoring.credit_applications">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">scoring.credit_applications</div>
+                    <div class="table-desc">Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya</div>
+                </div>
+                <span class="table-badge">scoring</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> application_id</strong></td>
+                        <td><span class="type-pill">UUID</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>UUID unik pengajuan pinjaman nasabah</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>customer_cif</strong></td>
+                        <td><span class="type-pill">VARCHAR(20)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor CIF nasabah Bank Raya</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>rule_id</strong></td>
+                        <td><span class="type-pill">INT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Foreign key ke master scorecard rules</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>requested_amount</strong></td>
+                        <td><span class="type-pill">NUMERIC(18,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nominal pinjaman yang diajukan dalam IDR</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>tenor_months</strong></td>
+                        <td><span class="type-pill">INT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Jangka waktu pinjaman dalam bulan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>risk_tier</strong></td>
+                        <td><span class="type-pill">VARCHAR(5)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Klasifikasi profil risiko (TIER_1 s.d TIER_5)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>score_value</strong></td>
+                        <td><span class="type-pill">INT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nilai skor kredit hasil evaluasi engine</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>application_status</strong></td>
+                        <td><span class="type-pill">VARCHAR(20)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>submitted_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMPTZ</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu pengajuan diajukan</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>approved_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMPTZ</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu persetujuan pinjaman</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="scoring.scorecard_rules">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">scoring.scorecard_rules</div>
+                    <div class="table-desc">Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya</div>
+                </div>
+                <span class="table-badge">scoring</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> rule_id</strong></td>
+                        <td><span class="type-pill">SERIAL</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Primary key auto-increment scorecard rule</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>rule_code</strong></td>
+                        <td><span class="type-pill">VARCHAR(50)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Kode unik rule scorecard kredit (misal: SCR-MICRO-01)</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>rule_name</strong></td>
+                        <td><span class="type-pill">VARCHAR(100)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nama deskriptif scorecard rule</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>weight_percentage</strong></td>
+                        <td><span class="type-pill">NUMERIC(5,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Bobot persentase kontribusi rule terhadap skor final</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>cutoff_score</strong></td>
+                        <td><span class="type-pill">INT</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Ambang batas nilai kelulusan kredit</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>is_active</strong></td>
+                        <td><span class="type-pill">BOOLEAN</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Flag status keaktifan rule</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>created_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMPTZ</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu pembuatan record</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>updated_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMPTZ</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Waktu pembaruan record</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (tab === 'dictionary') {
+                document.getElementById('dictionaryView').style.display = 'block';
+                document.getElementById('erdView').style.display = 'none';
+                event.target.classList.add('active');
+            } else {
+                document.getElementById('dictionaryView').style.display = 'none';
+                document.getElementById('erdView').style.display = 'block';
+                event.target.classList.add('active');
+            }
+        }
+
+        function filterCatalog() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.table-card');
+
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

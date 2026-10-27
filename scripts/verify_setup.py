@@ -201,6 +201,14 @@ def run_checks():
             print(f"[FAIL] File layout tidak ditemukan: {p.relative_to(base_dir)}")
             checks_passed = False
 
+    # 9. Check Standalone HTML Data Catalog
+    html_catalog = base_dir / "docs" / "data_dictionary.html"
+    if html_catalog.exists() and html_catalog.stat().st_size > 0:
+        print(f"[PASS] Standalone HTML Data Catalog ditemukan: {html_catalog.relative_to(base_dir)}")
+    else:
+        print(f"[FAIL] Standalone HTML Data Catalog tidak ditemukan: {html_catalog.relative_to(base_dir)}")
+        checks_passed = False
+
     print("=" * 75)
     if checks_passed:
         print("HASIL: SEMUA SPESIFIKASI TEKNIS & KEAMANAN TERVERIFIKASI 100% VALID")
