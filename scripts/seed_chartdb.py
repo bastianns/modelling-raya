@@ -406,6 +406,60 @@ def seed_chartdb():
                 print("  -> Accessible instantly at: http://localhost:8080/autoload.html")
             else:
                 print(f"[WARN] docker cp failed: {cp_res.stderr}")
+
+            # Also inject auto-bootstrap script into index.html so opening http://localhost:8080/ directly loads it!
+            print("[INFO] Injecting auto-bootstrap script into chartdb-app:/usr/share/nginx/html/index.html...")
+            cat_cmd = [docker_bin, "exec", "chartdb-app", "cat", "/usr/share/nginx/html/index.html"]
+            cat_res = subprocess.run(cat_cmd, capture_output=True, text=True, check=False)
+            if cat_res.returncode == 0 and "bank-raya-bootstrap" not in cat_res.stdout:
+                original_html = cat_res.stdout
+                bootstrap_script = f"""
+        <script id="bank-raya-bootstrap">
+        // Bank Raya Enterprise Auto-Seeder: Pre-loads diagram into ChartDB IndexedDB
+        (function() {{
+            try {{
+                const PAYLOAD = {json.dumps(payload, ensure_ascii=False)};
+                const req = indexedDB.open("ChartDB", 13);
+                req.onupgradeneeded = function(e) {{
+                    const db = e.target.result;
+                    const stores = [
+                        ["diagrams", {{ keyPath: "id", autoIncrement: true }}],
+                        ["db_tables", {{ keyPath: "id" }}],
+                        ["db_relationships", {{ keyPath: "id" }}],
+                        ["db_dependencies", {{ keyPath: "id" }}],
+                        ["areas", {{ keyPath: "id" }}],
+                        ["db_custom_types", {{ keyPath: "id" }}],
+                        ["config", {{ keyPath: "id", autoIncrement: true }}],
+                        ["diagram_filters", {{ keyPath: "diagramId" }}],
+                        ["notes", {{ keyPath: "id" }}]
+                    ];
+                    for (const [name, opts] of stores) {{
+                        if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, opts);
+                    }}
+                }};
+                req.onsuccess = function(e) {{
+                    const db = e.target.result;
+                    const tx = db.transaction(["diagrams", "db_tables", "db_relationships", "config"], "readwrite");
+                    tx.objectStore("diagrams").put(PAYLOAD.diagram);
+                    for (const tbl of PAYLOAD.db_tables) tx.objectStore("db_tables").put(tbl);
+                    for (const rel of PAYLOAD.db_relationships) tx.objectStore("db_relationships").put(rel);
+                    tx.objectStore("config").put(PAYLOAD.config);
+                }};
+            }} catch(err) {{
+                console.warn("ChartDB Auto-Bootstrap:", err);
+            }}
+        }})();
+        </script>
+      <script type="module" crossorigin src="/assets/index-BMkrl9hq.js"></script>"""
+                modified_html = original_html.replace(
+                    '<script type="module" crossorigin src="/assets/index-BMkrl9hq.js"></script>',
+                    bootstrap_script
+                )
+                temp_index = base_dir / "sources" / "index.html"
+                temp_index.write_text(modified_html, encoding="utf-8")
+                subprocess.run([docker_bin, "cp", str(temp_index), "chartdb-app:/usr/share/nginx/html/index.html"], check=False)
+                temp_index.unlink(missing_ok=True)
+                print("[PASS] Successfully injected auto-seeder into chartdb-app index.html (Direct Zero-Click Ready).")
         else:
             print("[WARN] Container 'chartdb-app' is not currently running. Will be copied on launch.")
     except Exception as e:

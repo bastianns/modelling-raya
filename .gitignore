@@ -11,7 +11,7 @@ __pycache__/
 *.py[cod]
 
 # Runtime uploads & temporary data
-azimutt-data/uploads/projects/
+azimutt-data/uploads/
 
 # OS metadata
 .DS_Store

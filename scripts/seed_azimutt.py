@@ -284,8 +284,11 @@ def generate_autoload_azimutt_html(project: dict) -> str:
 
 def seed_postgres_metadata(docker_bin: str):
     """Seed user, organization, and project directly into isolated PostgreSQL without exposing port."""
-    sql = """
-    INSERT INTO users (id, slug, name, email, avatar, is_admin, last_signin, created_at, updated_at, confirmed_at)
+    # Bcrypt hash for SteiITB2026!
+    bcrypt_pw = "$2b$12$Jzv7VxZdS97j/oYccZf1SuRraS9.uS7B9FcPxb0MhGts.SCg74UDK"
+    sql = f"""
+    -- 1. User bastiannatanaels@gmail.com
+    INSERT INTO users (id, slug, name, email, avatar, is_admin, hashed_password, onboarding, last_signin, created_at, updated_at, confirmed_at)
     VALUES (
         '11111111-1111-4111-8111-111111111111',
         'bastian-natanael',
@@ -293,6 +296,8 @@ def seed_postgres_metadata(docker_bin: str):
         'bastiannatanaels@gmail.com',
         'https://localhost/avatar.png',
         true,
+        '{bcrypt_pw}',
+        'completed',
         NOW(),
         NOW(),
         NOW(),
@@ -301,9 +306,31 @@ def seed_postgres_metadata(docker_bin: str):
     ON CONFLICT (email) DO UPDATE SET
         name = EXCLUDED.name,
         is_admin = true,
+        hashed_password = EXCLUDED.hashed_password,
+        onboarding = 'completed',
         confirmed_at = COALESCE(users.confirmed_at, NOW()),
         updated_at = NOW();
 
+    -- 2. Personal Organization (required by Azimutt dashboard)
+    INSERT INTO organizations (id, slug, name, logo, is_personal, created_by, updated_by, created_at, updated_at, plan, plan_status)
+    VALUES (
+        '33333333-3333-4333-8333-333333333333',
+        'bastian-natanael',
+        'Bastian Natanael',
+        'https://localhost/avatar.png',
+        true,
+        '11111111-1111-4111-8111-111111111111',
+        '11111111-1111-4111-8111-111111111111',
+        NOW(),
+        NOW(),
+        'pro',
+        'active'
+    )
+    ON CONFLICT (slug) DO UPDATE SET
+        is_personal = true,
+        updated_at = NOW();
+
+    -- 3. Team Organization: Bank Raya Enterprise
     INSERT INTO organizations (id, slug, name, logo, is_personal, created_by, updated_by, created_at, updated_at, plan, plan_status)
     VALUES (
         '22222222-2222-4222-8222-222222222222',
@@ -322,26 +349,36 @@ def seed_postgres_metadata(docker_bin: str):
         name = EXCLUDED.name,
         updated_at = NOW();
 
+    -- 4. Organization Memberships
     INSERT INTO organization_members (user_id, organization_id, created_by, updated_by, created_at, updated_at, role)
-    VALUES (
-        '11111111-1111-4111-8111-111111111111',
-        '22222222-2222-4222-8222-222222222222',
-        '11111111-1111-4111-8111-111111111111',
-        '11111111-1111-4111-8111-111111111111',
-        NOW(),
-        NOW(),
-        'owner'
-    )
+    VALUES 
+        ('11111111-1111-4111-8111-111111111111', '33333333-3333-4333-8333-333333333333', '11111111-1111-4111-8111-111111111111', '11111111-1111-4111-8111-111111111111', NOW(), NOW(), 'owner'),
+        ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', '11111111-1111-4111-8111-111111111111', NOW(), NOW(), 'owner')
     ON CONFLICT (user_id, organization_id) DO UPDATE SET
         role = 'owner',
         updated_at = NOW();
 
+    -- 5. User Profile
+    INSERT INTO user_profiles (id, user_id, role, company, team_organization_id, created_at, updated_at)
+    VALUES (
+        '44444444-4444-4444-8444-444444444444',
+        '11111111-1111-4111-8111-111111111111',
+        'Data Architect',
+        'Bank Raya',
+        '22222222-2222-4222-8222-222222222222',
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (id) DO NOTHING;
+
+    -- 6. Project: Bank Raya Enterprise Data Architecture (Personal & Team)
     INSERT INTO projects (
         id, organization_id, slug, name, description, encoding_version, storage_kind,
         file, nb_sources, nb_tables, nb_columns, nb_relations, nb_types,
-        nb_comments, nb_notes, nb_layouts, created_by, updated_by, created_at, updated_at, visibility
+        nb_comments, nb_notes, nb_layouts, created_by_id, updated_by_id, created_at, updated_at, visibility
     )
-    VALUES (
+    VALUES 
+    (
         '00000000-0000-4000-8000-000000000001',
         '22222222-2222-4222-8222-222222222222',
         'bank-raya-enterprise',
@@ -362,10 +399,35 @@ def seed_postgres_metadata(docker_bin: str):
         '11111111-1111-4111-8111-111111111111',
         NOW(),
         NOW(),
-        'organization'
+        'write'
+    ),
+    (
+        '00000000-0000-4000-8000-000000000002',
+        '33333333-3333-4333-8333-333333333333',
+        'bank-raya-enterprise',
+        'Bank Raya Enterprise Data Architecture',
+        'Unified Multi-Platform Architecture (DAMA-DMBOK V.2 & DASG 11-Domain Taxonomy)',
+        1,
+        'remote',
+        'projects/00000000-0000-4000-8000-000000000002.json',
+        1,
+        8,
+        65,
+        4,
+        1,
+        65,
+        0,
+        38,
+        '11111111-1111-4111-8111-111111111111',
+        '11111111-1111-4111-8111-111111111111',
+        NOW(),
+        NOW(),
+        'write'
     )
     ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
+        organization_id = EXCLUDED.organization_id,
+        visibility = EXCLUDED.visibility,
         nb_layouts = EXCLUDED.nb_layouts,
         updated_at = NOW();
     """
@@ -377,9 +439,10 @@ def seed_postgres_metadata(docker_bin: str):
     res = subprocess.run(cmd, input=sql, capture_output=True, text=True, check=False)
     if res.returncode == 0:
         print("[PASS] Successfully pre-seeded PostgreSQL metadata (user, org, project):")
-        print("  -> User:         bastiannatanaels@gmail.com (Role: Owner / Admin)")
-        print("  -> Organization: bank-raya ('Bank Raya Enterprise')")
-        print("  -> Project:      Bank Raya Enterprise Data Architecture (ID: 00000000-0000-4000-8000-000000000001)")
+        print("  -> User:         bastiannatanaels@gmail.com (Password: SteiITB2026!)")
+        print("  -> Org Personal: bastian-natanael (is_personal = true)")
+        print("  -> Org Team:     bank-raya ('Bank Raya Enterprise')")
+        print("  -> Projects:     Pre-seeded in both personal & team workspaces")
     else:
         print(f"[WARN] PostgreSQL metadata seeding reported: {res.stderr}")
 
@@ -397,10 +460,15 @@ def seed_azimutt():
     project = build_azimutt_project_json(base_dir)
     project_json_str = json.dumps(project, indent=2, ensure_ascii=False)
 
-    # 2. Save locally to multiple paths for persistent volume mounts
+    # 2. Save locally to multiple paths for persistent volume mounts & Waffle uploads
     out_paths = [
         base_dir / "sources" / "bank_raya.azimutt.json",
+        base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000001_original.json",
+        base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000001.json",
+        base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000002_original.json",
+        base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000002.json",
         base_dir / "azimutt-data" / "uploads" / "projects" / "00000000-0000-4000-8000-000000000001.json",
+        base_dir / "azimutt-data" / "uploads" / "projects" / "00000000-0000-4000-8000-000000000002.json",
         base_dir / "azimutt-data" / "uploads" / "projects" / "bank-raya-enterprise.json"
     ]
     for p in out_paths:
@@ -435,13 +503,22 @@ def seed_azimutt():
         if "azimutt-app" in running_containers:
             print("[INFO] Injecting 'bank_raya.azimutt.json' into Azimutt static sample registry...")
             target_container_path = "azimutt-app:/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json"
-            cp_cmd = [docker_bin, "cp", str(out_paths[0]), target_container_path]
-            cp_res = subprocess.run(cp_cmd, capture_output=True, text=True, check=False)
-            if cp_res.returncode == 0:
-                print("[PASS] Injected project sample into Azimutt container.")
-                print("  -> Direct Zero-Form URL: http://localhost:8000/create?json=/elm/samples/bank_raya.azimutt.json")
-            else:
-                print(f"[WARN] Failed to docker cp to azimutt-app: {cp_res.stderr}")
+            subprocess.run([docker_bin, "cp", str(out_paths[0]), target_container_path], check=False)
+
+            # Also overwrite basic.azimutt.json so default sample URL natively loads Bank Raya
+            sh_cmd = (
+                "cp /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json "
+                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt.json && "
+                "cp /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json "
+                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt-85e3ad10ffd11b6d56c4e.json && "
+                "gzip -c -f /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json > "
+                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt.json.gz && "
+                "gzip -c -f /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json > "
+                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt-85e3ad10ffd11b6d56c4e.json.gz"
+            )
+            subprocess.run([docker_bin, "exec", "-u", "root", "azimutt-app", "sh", "-c", sh_cmd], check=False)
+            print("[PASS] Successfully updated Azimutt sample files (Zero-Form Ready).")
+            print("  -> Direct Instant View: http://localhost:8000/create?json=/elm/samples/basic.azimutt.json")
         else:
             print("[WARN] Container 'azimutt-app' is not running. Will be injected on launch.")
 

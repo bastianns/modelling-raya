@@ -142,14 +142,19 @@ def main():
     # -------------------------------------------------------------------------
     html_catalog_path = (base_dir / "docs" / "data_dictionary.html").resolve()
     chartdb_url = "http://localhost:8080/autoload.html"
-    azimutt_url = "http://localhost:8000"
+    azimutt_url = "http://localhost:8000/create?json=/elm/samples/basic.azimutt.json"
+    azimutt_login_url = "http://localhost:8000/login"
 
     print("\n" + "=" * 80)
     print("ALL DATA ARCHITECTURE SYSTEMS READY & SYNCHRONIZED!")
     print("=" * 80)
-    print(f"1. Data Dictionary & Catalog:  {html_catalog_path.as_uri()}")
-    print(f"2. ChartDB Automated Canvas:   {chartdb_url}")
-    print(f"3. Azimutt Visual Architecture: {azimutt_url}")
+    print(f"1. Data Dictionary & Catalog:    {html_catalog_path.as_uri()}")
+    print(f"2. ChartDB Automated Canvas:     {chartdb_url}")
+    print(f"   (Atau akses langsung:          http://localhost:8080)")
+    print(f"3. Azimutt Instant Visual View:  {azimutt_url}")
+    print(f"   (Dashboard Organisasi:        {azimutt_login_url})")
+    print(f"   -> Akun Admin / Owner:        bastiannatanaels@gmail.com")
+    print(f"   -> Kata Sandi:                SteiITB2026!")
     print("=" * 80)
 
     if not args.no_browser:
