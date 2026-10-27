@@ -1,0 +1,170 @@
+{
+  "layouts": {
+    "oltp/core_and_channels": {
+      "name": "OLTP - Core Risk & Channels",
+      "description": "Sistem transaksional operasional (PostgreSQL Scoring, MySQL Channel, SQL Server Legacy)",
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "blue"
+        },
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 500,
+            "top": 100
+          },
+          "color": "indigo"
+        },
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 450
+          },
+          "color": "amber"
+        },
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 500,
+            "top": 450
+          },
+          "color": "red"
+        }
+      ]
+    },
+    "organize/bigquery_raw_to_mart": {
+      "name": "Organize - BigQuery Medallion Architecture",
+      "description": "Lapisan data warehouse BigQuery (Raw -> Staging -> Mart) diorkestrasi Airflow & dbt",
+      "tables": [
+        {
+          "id": "dataraw.raw_applications",
+          "position": {
+            "left": 100,
+            "top": 150
+          },
+          "color": "gray"
+        },
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 450,
+            "top": 150
+          },
+          "color": "teal"
+        },
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 800,
+            "top": 80
+          },
+          "color": "emerald"
+        },
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 800,
+            "top": 380
+          },
+          "color": "purple"
+        }
+      ]
+    },
+    "deliver/superset_executive_bi": {
+      "name": "Deliver - Superset BI & Analytics Datasets",
+      "description": "Dataset Data Mart yang diekspos ke Apache Superset untuk metrik eksekutif dan kepatuhan",
+      "tables": [
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 150,
+            "top": 120
+          },
+          "color": "emerald"
+        },
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 600,
+            "top": 120
+          },
+          "color": "purple"
+        }
+      ]
+    },
+    "teams/credit_scoring": {
+      "name": "Team Domain: Credit Scoring & Risk",
+      "description": "End-to-end lineage dari pengajuan aplikasi, pencairan mitra, hingga mart scoring",
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "blue"
+        },
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 450,
+            "top": 100
+          },
+          "color": "indigo"
+        },
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 400
+          },
+          "color": "amber"
+        },
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 450,
+            "top": 400
+          },
+          "color": "teal"
+        },
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 800,
+            "top": 250
+          },
+          "color": "emerald"
+        }
+      ]
+    },
+    "teams/regulatory_reporting": {
+      "name": "Team Domain: Regulatory & Compliance",
+      "description": "Pemodelan pelaporan debitur dan agunan untuk kepatuhan SLIK OJK",
+      "tables": [
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 150,
+            "top": 150
+          },
+          "color": "red"
+        },
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 600,
+            "top": 150
+          },
+          "color": "purple"
+        }
+      ]
+    }
+  }
+}
