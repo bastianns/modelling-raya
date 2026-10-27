@@ -18,7 +18,7 @@ except ImportError:
 
 
 class MultiPlatformMetadataParser:
-    """Deterministic parser for multi-platform static DDL and metadata configs."""
+    """Deterministic parser for multi-platform static DDL and metadata configs with SSoT deduplication."""
 
     def __init__(self, base_dir: Path):
         self.base_dir = base_dir
@@ -30,6 +30,70 @@ class MultiPlatformMetadataParser:
         self.superset_metadata = {}
         self.airflow_metadata = {}
         self.dasg_domains = []
+        self.ssot_sources = {}      # (schema, table) -> list of source platforms
+        self.ssot_dedup_count = 0   # count of smart merges
+
+    def register_or_merge_table(self, schema: str, name: str, table_dict: dict, source_label: str):
+        """Canonical Entity Deduplication (Single Source of Truth) based on FQN (schema.table)."""
+        norm_schema = schema.strip().lower()
+        norm_name = name.strip().lower()
+        key = (norm_schema, norm_name)
+        
+        table_dict["schema"] = norm_schema
+        table_dict["name"] = norm_name
+
+        if key not in self.tables:
+            self.tables[key] = table_dict
+            self.ssot_sources[key] = [source_label]
+        else:
+            # Smart-merge attributes from cross-divisional layers
+            existing = self.tables[key]
+            self.ssot_sources[key].append(source_label)
+            self.ssot_dedup_count += 1
+            
+            # 1. Merge platform label
+            if source_label not in existing.get("platform", ""):
+                existing["platform"] = f"{existing.get('platform', '')} + {source_label}"
+                
+            # 2. Merge columns without duplicates
+            existing_col_map = {c["name"].lower(): c for c in existing["columns"]}
+            for col in table_dict.get("columns", []):
+                c_name_lower = col["name"].lower()
+                if c_name_lower in existing_col_map:
+                    target = existing_col_map[c_name_lower]
+                    if col.get("comment") and not target.get("comment"):
+                        target["comment"] = col["comment"]
+                    elif col.get("comment") and col["comment"] not in target.get("comment", ""):
+                        target["comment"] += f" | {col['comment']}"
+                    if not col.get("nullable", True):
+                        target["nullable"] = False
+                    if col.get("default") and not target.get("default"):
+                        target["default"] = col["default"]
+                else:
+                    existing["columns"].append(col)
+                    existing_col_map[c_name_lower] = col
+                    
+            # 3. Merge primaryKey
+            if not existing.get("primaryKey") and table_dict.get("primaryKey"):
+                existing["primaryKey"] = table_dict["primaryKey"]
+                
+            # 4. Merge uniques
+            existing_uniques = {u.get("name") for u in existing.get("uniques", [])}
+            for u in table_dict.get("uniques", []):
+                if u.get("name") not in existing_uniques:
+                    existing.setdefault("uniques", []).append(u)
+                    existing_uniques.add(u.get("name"))
+                    
+            # 5. Merge indexes
+            existing_indexes = {idx.get("name") for idx in existing.get("indexes", [])}
+            for idx in table_dict.get("indexes", []):
+                if idx.get("name") not in existing_indexes:
+                    existing.setdefault("indexes", []).append(idx)
+                    existing_indexes.add(idx.get("name"))
+                    
+            # 6. Merge comment
+            if table_dict.get("comment") and table_dict["comment"] not in existing.get("comment", ""):
+                existing["comment"] += f" | {table_dict['comment']}"
 
     def parse_postgres(self):
         pg_file = self.inputs_dir / "oltp_postgres.sql"
@@ -38,7 +102,7 @@ class MultiPlatformMetadataParser:
         content = pg_file.read_text(encoding="utf-8")
 
         # 1. Parse scoring.scorecard_rules
-        self.tables[("scoring", "scorecard_rules")] = {
+        self.register_or_merge_table("scoring", "scorecard_rules", {
             "schema": "scoring",
             "name": "scorecard_rules",
             "platform": "PostgreSQL 16 (Core OLTP)",
@@ -57,10 +121,10 @@ class MultiPlatformMetadataParser:
             "indexes": [],
             "checks": [],
             "comment": "Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya"
-        }
+        }, "PostgreSQL OLTP")
 
         # 2. Parse scoring.credit_applications
-        self.tables[("scoring", "credit_applications")] = {
+        self.register_or_merge_table("scoring", "credit_applications", {
             "schema": "scoring",
             "name": "credit_applications",
             "platform": "PostgreSQL 16 (Core OLTP)",
@@ -84,7 +148,7 @@ class MultiPlatformMetadataParser:
             ],
             "checks": [],
             "comment": "Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya"
-        }
+        }, "PostgreSQL OLTP")
 
         self.relations.append({
             "name": "fk_credit_app_scorecard",
@@ -97,7 +161,7 @@ class MultiPlatformMetadataParser:
         if not mysql_file.exists():
             return
 
-        self.tables[("channel", "loan_disbursements")] = {
+        self.register_or_merge_table("channel", "loan_disbursements", {
             "schema": "channel",
             "name": "loan_disbursements",
             "platform": "MySQL 8.0 / MariaDB (Channel OLTP)",
@@ -120,7 +184,7 @@ class MultiPlatformMetadataParser:
             ],
             "checks": [],
             "comment": "Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya"
-        }
+        }, "MySQL OLTP")
 
         self.relations.append({
             "name": "fk_disbursement_scoring_app",
@@ -133,7 +197,7 @@ class MultiPlatformMetadataParser:
         if not sqlserver_file.exists():
             return
 
-        self.tables[("legacy", "collateral_registers")] = {
+        self.register_or_merge_table("legacy", "collateral_registers", {
             "schema": "legacy",
             "name": "collateral_registers",
             "platform": "Microsoft SQL Server (Legacy Core OLTP)",
@@ -154,8 +218,7 @@ class MultiPlatformMetadataParser:
             "indexes": [],
             "checks": [],
             "comment": "Master registrasi agunan kredit legacy yang dijamin oleh nasabah"
-        }
-        # Note: legacy.collateral_registers has NO explicit FK relation in DDL (triggers Shift-Left Linter WARN-01)
+        }, "SQL Server Legacy OLTP")
 
     def parse_bigquery(self):
         bq_file = self.inputs_dir / "olap_bigquery_ddl.sql"
@@ -163,7 +226,7 @@ class MultiPlatformMetadataParser:
             return
 
         # 1. Data Raw: raw_applications
-        self.tables[("dataraw", "raw_applications")] = {
+        self.register_or_merge_table("dataraw", "raw_applications", {
             "schema": "dataraw",
             "name": "raw_applications",
             "platform": "Google BigQuery (OLAP Data Lakehouse - Raw)",
@@ -179,10 +242,10 @@ class MultiPlatformMetadataParser:
             "indexes": [],
             "checks": [],
             "comment": "Penyimpanan data mentah pengajuan kredit dari CDC message broker"
-        }
+        }, "BigQuery Raw")
 
         # 2. Data Staging: stg_applications
-        self.tables[("datastaging", "stg_applications")] = {
+        self.register_or_merge_table("datastaging", "stg_applications", {
             "schema": "datastaging",
             "name": "stg_applications",
             "platform": "Google BigQuery (OLAP Data Lakehouse - Staging)",
@@ -201,7 +264,7 @@ class MultiPlatformMetadataParser:
             "indexes": [],
             "checks": [],
             "comment": "Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik"
-        }
+        }, "BigQuery Staging")
 
         self.relations.append({
             "name": "fk_stg_raw_applications",
@@ -210,7 +273,7 @@ class MultiPlatformMetadataParser:
         })
 
         # 3. Data Mart: fct_credit_scoring
-        self.tables[("datamart", "fct_credit_scoring")] = {
+        self.register_or_merge_table("datamart", "fct_credit_scoring", {
             "schema": "datamart",
             "name": "fct_credit_scoring",
             "platform": "Google BigQuery (OLAP Data Lakehouse - Mart)",
@@ -229,7 +292,7 @@ class MultiPlatformMetadataParser:
             "indexes": [],
             "checks": [],
             "comment": "Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur"
-        }
+        }, "BigQuery Mart")
 
         self.relations.append({
             "name": "fk_fct_stg_applications",
@@ -244,7 +307,7 @@ class MultiPlatformMetadataParser:
         })
 
         # 4. Data Mart: rpt_slik_ojk
-        self.tables[("datamart", "rpt_slik_ojk")] = {
+        self.register_or_merge_table("datamart", "rpt_slik_ojk", {
             "schema": "datamart",
             "name": "rpt_slik_ojk",
             "platform": "Google BigQuery (OLAP Data Lakehouse - Mart)",
@@ -264,7 +327,7 @@ class MultiPlatformMetadataParser:
             "indexes": [],
             "checks": [],
             "comment": "Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK"
-        }
+        }, "BigQuery Mart")
 
     def parse_dbt_and_airflow(self):
         dbt_file = self.inputs_dir / "dbt_schema.yml"
@@ -628,6 +691,9 @@ class ShiftLeftLinter:
         print("SHIFT-LEFT LINTER: DATA GOVERNANCE & INTEGRITY AUDIT")
         print("-" * 80)
 
+        # SSOT-01: Canonical Entity Deduplication Check
+        self._check_ssot_deduplication()
+
         # WARN-01: Orphan Tables
         self._check_orphan_tables()
 
@@ -638,11 +704,21 @@ class ShiftLeftLinter:
         self._check_pk_and_contracts()
 
         # Print findings
+        ssot_list = [w for w in self.warnings if w.startswith("[SSOT-01]")]
         warn_01_list = [w for w in self.warnings if w.startswith("[WARN-01]")]
         warn_02_list = [w for w in self.warnings if w.startswith("[WARN-02]")]
         warn_03_list = [w for w in self.warnings if w.startswith("[WARN-03]")]
 
-        print(f"[WARN-01] Orphan Tables Detected ({len(warn_01_list)} item(s)):")
+        print(f"[SSOT-01] Canonical Entity Deduplication ({len(self.parser.tables)} canonical entities unified):")
+        print(f"  * Total Unified Entities: {len(self.parser.tables)} tables across 6 data layers.")
+        print(f"  * Cross-Divisional Smart Merges: {self.parser.ssot_dedup_count} enrichment events merged.")
+        if ssot_list:
+            for item in ssot_list:
+                print(f"  * {item[10:]}")
+        else:
+            print("  * 0 Entity duplication detected (100% SSoT Compliant).")
+
+        print(f"\n[WARN-01] Orphan Tables Detected ({len(warn_01_list)} item(s)):")
         if warn_01_list:
             for item in warn_01_list:
                 print(f"  * {item[10:]}")
@@ -665,6 +741,23 @@ class ShiftLeftLinter:
             print("  * All dbt not_null test contracts are validated against source DDL.")
 
         print("-" * 80)
+
+    def _check_ssot_deduplication(self):
+        # 1. Verify all table names are unique across FQN
+        seen_fqns = set()
+        for (schema, table), tbl in self.parser.tables.items():
+            fqn = f"{schema}.{table}"
+            if fqn in seen_fqns:
+                self.warnings.append(f"[SSOT-01] Duplicate canonical table FQN detected: {fqn}")
+            seen_fqns.add(fqn)
+
+            # 2. Verify column names within table are unique
+            seen_cols = set()
+            for col in tbl.get("columns", []):
+                col_name = col["name"].lower()
+                if col_name in seen_cols:
+                    self.warnings.append(f"[SSOT-01] Duplicate column '{col['name']}' in canonical table '{fqn}'")
+                seen_cols.add(col_name)
 
     def _check_orphan_tables(self):
         connected_tables = set()
