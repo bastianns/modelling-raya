@@ -1,0 +1,100 @@
+version: 2
+
+# ==============================================================================
+# Bank Raya dbt Data Contracts & Governance Catalog
+# Architecture: DAMA-DMBOK V.2 Data Modeling & Design
+# Platform: BigQuery OLAP Warehouse Models
+# ==============================================================================
+
+sources:
+  - name: dataraw
+    description: "Lapisan data mentah (ingestion layer) Data Warehouse Bank Raya"
+    tables:
+      - name: raw_applications
+        description: "Data mentah payload pengajuan kredit dari message broker CDC"
+        columns:
+          - name: raw_id
+            description: "Surrogate identifier mentah ingestion data"
+            data_tests:
+              - not_null
+              - unique
+          - name: payload_json
+            description: "JSON string representasi event transaksi pengajuan kredit"
+          - name: source_system
+            description: "Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)"
+            data_tests:
+              - not_null
+
+models:
+  - name: stg_applications
+    description: "Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya"
+    columns:
+      - name: application_id
+        description: "ID pengajuan pinjaman (UUID string terstandarisasi)"
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              to: source('dataraw', 'raw_applications')
+              field: raw_id
+      - name: customer_cif
+        description: "Nomor identifikasi unik nasabah (Customer Information File)"
+        data_tests:
+          - not_null
+      - name: requested_amount
+        description: "Nominal pengajuan plafond kredit dalam Rupiah"
+        data_tests:
+          - not_null
+      - name: status
+        description: "Status verifikasi pengajuan kredit"
+        data_tests:
+          - not_null
+
+  - name: fct_credit_scoring
+    description: "Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur"
+    columns:
+      - name: fact_id
+        description: "Surrogate key fakta penilaian kredit"
+        data_tests:
+          - not_null
+          - unique
+      - name: application_id
+        description: "Relasi foreign key ke tabel staging pengajuan pinjaman"
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_applications')
+              field: application_id
+      - name: customer_cif
+        description: "Nomor CIF nasabah yang dinilai skor kreditnya"
+        data_tests:
+          - not_null
+      - name: credit_score
+        description: "Nilai skor kredit terhitung (skala 300 - 850)"
+        data_tests:
+          - not_null
+      - name: risk_tier
+        description: "Klasifikasi profil risiko nasabah (TIER_1 s.d. TIER_5)"
+        data_tests:
+          - not_null
+
+  - name: rpt_slik_ojk
+    description: "Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan"
+    columns:
+      - name: report_id
+        description: "Primary key baris pelaporan bulanan SLIK OJK"
+        data_tests:
+          - not_null
+          - unique
+      - name: period_yyyymm
+        description: "Periode akuntansi pelaporan format tahun-bulan (YYYYMM)"
+        data_tests:
+          - not_null
+      - name: collectibility_status
+        description: "Kolektibilitas debitur per POJK (1: Lancar, 2: DPK, 3: Kurang Lancar, 4: Diragukan, 5: Macet)"
+        data_tests:
+          - not_null
+      - name: outstanding_balance
+        description: "Total saldo pokok pinjaman aktif"
+        data_tests:
+          - not_null

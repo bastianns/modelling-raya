@@ -1,0 +1,103 @@
+# ==============================================================================
+# Bank Raya Apache Superset Datasources Export
+# CLI Command: superset export_datasources -f superset_datasources.yaml
+# Architecture: DAMA-DMBOK V.2 BI & Business Analytics Delivery Layer
+# ==============================================================================
+
+version: 1.0.0
+databases:
+  - database_name: Raya_BigQuery_DWH
+    sqlalchemy_uri: bigquery://bank-raya-analytics-prod/datamart
+    tables:
+      - table_name: fct_credit_scoring
+        schema: datamart
+        description: "Dataset Analitik Credit Scoring & Portfolio Risk Bank Raya"
+        columns:
+          - column_name: fact_id
+            type: STRING
+            is_dttm: false
+            description: "Surrogate key fakta credit scoring"
+          - column_name: application_id
+            type: STRING
+            is_dttm: false
+            description: "ID pengajuan pinjaman"
+          - column_name: customer_cif
+            type: STRING
+            is_dttm: false
+            description: "Nomor CIF nasabah"
+          - column_name: credit_score
+            type: INT64
+            is_dttm: false
+            description: "Skor kredit nasabah"
+          - column_name: risk_tier
+            type: STRING
+            is_dttm: false
+            description: "Segmentasi tier risiko pinjaman"
+          - column_name: approved_amount
+            type: NUMERIC
+            is_dttm: false
+            description: "Plafond pinjaman yang disetujui"
+          - column_name: scoring_date
+            type: TIMESTAMP
+            is_dttm: true
+            description: "Waktu pelaksanaan evaluasi scoring"
+        metrics:
+          - metric_name: avg_credit_score
+            verbose_name: "Average Credit Score"
+            metric_type: avg
+            expression: "AVG(credit_score)"
+            description: "Rata-rata skor kredit nasabah yang disetujui"
+          - metric_name: total_approved_amount
+            verbose_name: "Total Approved Loan Amount"
+            metric_type: sum
+            expression: "SUM(approved_amount)"
+            description: "Total akumulasi plafond kredit yang disetujui"
+          - metric_name: high_risk_exposure
+            verbose_name: "High Risk Portfolio Exposure"
+            metric_type: count
+            expression: "COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)"
+            description: "Jumlah aplikasi pinjaman dengan profil risiko tinggi"
+
+      - table_name: rpt_slik_ojk
+        schema: datamart
+        description: "Dataset Dashboard Pelaporan Kepatuhan SLIK OJK Bulanan"
+        columns:
+          - column_name: report_id
+            type: STRING
+            is_dttm: false
+            description: "Primary key baris pelaporan SLIK"
+          - column_name: period_yyyymm
+            type: STRING
+            is_dttm: false
+            description: "Periode bulan laporan format YYYYMM"
+          - column_name: account_number
+            type: STRING
+            is_dttm: false
+            description: "Nomor rekening pinjaman"
+          - column_name: customer_cif
+            type: STRING
+            is_dttm: false
+            description: "Nomor CIF debitur"
+          - column_name: collectibility_status
+            type: STRING
+            is_dttm: false
+            description: "Kualitas debitur (Kol 1 Lancar s.d Kol 5 Macet)"
+          - column_name: outstanding_balance
+            type: NUMERIC
+            is_dttm: false
+            description: "Total saldo pokok baki debet pinjaman"
+          - column_name: provision_amount
+            type: NUMERIC
+            is_dttm: false
+            description: "Cadangan Kerugian Penurunan Nilai (CKPN)"
+        metrics:
+          - metric_name: total_outstanding
+            verbose_name: "Total Outstanding Loan"
+            metric_type: sum
+            expression: "SUM(outstanding_balance)"
+            description: "Total baki debet pinjaman aktif seluruh debitur"
+          - metric_name: npl_ratio
+            verbose_name: "Non-Performing Loan (NPL) Ratio"
+            metric_type: post_compute
+            expression: "SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100"
+            description: "Persentase rasio kredit macet/bermasalah (NPL) Bank Raya"
