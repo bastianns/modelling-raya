@@ -10,6 +10,9 @@ venv/
 __pycache__/
 *.py[cod]
 
+# Runtime uploads & temporary data
+azimutt-data/uploads/projects/
+
 # OS metadata
 .DS_Store
 Thumbs.db

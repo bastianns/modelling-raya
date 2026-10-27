@@ -1,0 +1,1285 @@
+{
+  "id": "00000000-0000-4000-8000-000000000001",
+  "name": "Bank Raya Enterprise Data Architecture",
+  "description": "Unified Multi-Platform Architecture (DAMA-DMBOK V.2 & DASG 11-Domain Taxonomy)",
+  "sources": [
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "name": "bank_raya_unified_schema.json",
+      "kind": {
+        "kind": "AmlLocalFile",
+        "name": "bank_raya_unified_schema.json",
+        "size": 21957
+      },
+      "tables": [
+        {
+          "schema": "channel",
+          "table": "loan_disbursements",
+          "name": "loan_disbursements",
+          "columns": [
+            {
+              "name": "disbursement_id",
+              "type": "BIGINT",
+              "nullable": false,
+              "default": null,
+              "comment": "Surrogate primary key auto increment"
+            },
+            {
+              "name": "application_id",
+              "type": "VARCHAR(36)",
+              "nullable": false,
+              "default": null,
+              "comment": "ID Pengajuan Kredit referensi ke scoring core engine"
+            },
+            {
+              "name": "partner_channel_code",
+              "type": "VARCHAR(50)",
+              "nullable": false,
+              "default": null,
+              "comment": "Kode identifikasi mitra agregator / keagenan digital"
+            },
+            {
+              "name": "account_destination",
+              "type": "VARCHAR(30)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor rekening tujuan pencairan dana nasabah"
+            },
+            {
+              "name": "disbursement_amount",
+              "type": "DECIMAL(18,2)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nominal dana yang dicairkan ke nasabah"
+            },
+            {
+              "name": "disbursement_fee",
+              "type": "DECIMAL(10,2)",
+              "nullable": false,
+              "default": "0.00",
+              "comment": "Biaya administrasi / transfer pencairan"
+            },
+            {
+              "name": "disbursement_status",
+              "type": "VARCHAR(20)",
+              "nullable": false,
+              "default": "'PENDING'",
+              "comment": "Status pencairan: PENDING, SUCCESS, FAILED"
+            },
+            {
+              "name": "channel_reference_id",
+              "type": "VARCHAR(100)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor referensi settlement transaksi mitra"
+            },
+            {
+              "name": "disbursed_at",
+              "type": "TIMESTAMP",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP",
+              "comment": "Waktu eksekusi pencairan pinjaman"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_loan_disbursements",
+            "columns": [
+              "disbursement_id"
+            ]
+          },
+          "uniques": [
+            {
+              "name": "uq_channel_reference_id",
+              "columns": [
+                "channel_reference_id"
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "idx_disb_channel",
+              "columns": [
+                "partner_channel_code"
+              ]
+            },
+            {
+              "name": "idx_disb_status",
+              "columns": [
+                "disbursement_status"
+              ]
+            }
+          ],
+          "checks": [],
+          "comment": "Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya | DASG: domain_03/subdomain_03_1 | dbt Source: Transaksi pencairan pinjaman via agen dan fintech partner"
+        },
+        {
+          "schema": "datamart",
+          "table": "fct_credit_scoring",
+          "name": "fct_credit_scoring",
+          "columns": [
+            {
+              "name": "fact_id",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Surrogate key fakta penilaian kredit"
+            },
+            {
+              "name": "application_id",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Relasi foreign key ke tabel staging pengajuan pinjaman"
+            },
+            {
+              "name": "customer_cif",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor CIF nasabah yang dinilai skor kreditnya"
+            },
+            {
+              "name": "credit_score",
+              "type": "INT64",
+              "nullable": false,
+              "default": null,
+              "comment": "Nilai skor kredit terhitung (skala 300 - 850)"
+            },
+            {
+              "name": "risk_tier",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Klasifikasi profil risiko nasabah (TIER_1 s.d. TIER_5)"
+            },
+            {
+              "name": "approved_amount",
+              "type": "NUMERIC",
+              "nullable": false,
+              "default": null,
+              "comment": "Nominal plafond yang disetujui"
+            },
+            {
+              "name": "scoring_details",
+              "type": "STRUCT<model_version STRING, probability_of_default NUMERIC, score_cutoff INT64>",
+              "nullable": true,
+              "default": null,
+              "comment": "Struktur detail model statistik machine learning"
+            },
+            {
+              "name": "scoring_date",
+              "type": "TIMESTAMP",
+              "nullable": false,
+              "default": null,
+              "comment": "Tanggal dan waktu evaluasi credit scoring"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_fct_credit_scoring",
+            "columns": [
+              "fact_id"
+            ]
+          },
+          "uniques": [],
+          "indexes": [],
+          "checks": [],
+          "comment": "Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | DASG: domain_08/subdomain_08_1 | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]"
+        },
+        {
+          "schema": "datamart",
+          "table": "rpt_slik_ojk",
+          "name": "rpt_slik_ojk",
+          "columns": [
+            {
+              "name": "report_id",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Primary key baris pelaporan bulanan SLIK OJK"
+            },
+            {
+              "name": "period_yyyymm",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Periode akuntansi pelaporan format tahun-bulan (YYYYMM)"
+            },
+            {
+              "name": "account_number",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor rekening fasilitas kredit debitur"
+            },
+            {
+              "name": "customer_cif",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor CIF nasabah debitur"
+            },
+            {
+              "name": "collectibility_status",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Kolektibilitas debitur per POJK (1: Lancar, 2: DPK, 3: Kurang Lancar, 4: Diragukan, 5: Macet)"
+            },
+            {
+              "name": "outstanding_balance",
+              "type": "NUMERIC",
+              "nullable": false,
+              "default": null,
+              "comment": "Total saldo pokok pinjaman aktif"
+            },
+            {
+              "name": "provision_amount",
+              "type": "NUMERIC",
+              "nullable": false,
+              "default": null,
+              "comment": "Cadangan Kerugian Penurunan Nilai (CKPN)"
+            },
+            {
+              "name": "submission_status",
+              "type": "STRING",
+              "nullable": true,
+              "default": "'PENDING'",
+              "comment": "Status pelaporan ke OJK (PENDING, SUBMITTED, APPROVED)"
+            },
+            {
+              "name": "created_at",
+              "type": "TIMESTAMP",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP()",
+              "comment": "Waktu pembentukan data agregasi"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_rpt_slik_ojk",
+            "columns": [
+              "report_id"
+            ]
+          },
+          "uniques": [],
+          "indexes": [],
+          "checks": [],
+          "comment": "Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | DASG: domain_05/subdomain_05_1 | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]"
+        },
+        {
+          "schema": "dataraw",
+          "table": "raw_applications",
+          "name": "raw_applications",
+          "columns": [
+            {
+              "name": "raw_id",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Surrogate identifier mentah ingestion data"
+            },
+            {
+              "name": "payload_json",
+              "type": "STRING",
+              "nullable": true,
+              "default": null,
+              "comment": "JSON string representasi event transaksi pengajuan kredit"
+            },
+            {
+              "name": "source_system",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)"
+            },
+            {
+              "name": "kafka_offset",
+              "type": "INT64",
+              "nullable": true,
+              "default": null,
+              "comment": "Offset Kafka message partition"
+            },
+            {
+              "name": "ingested_at",
+              "type": "TIMESTAMP",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP()",
+              "comment": "Waktu ingestion ke BigQuery"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_raw_applications",
+            "columns": [
+              "raw_id"
+            ]
+          },
+          "uniques": [],
+          "indexes": [],
+          "checks": [],
+          "comment": "Penyimpanan data mentah pengajuan kredit dari CDC message broker | DASG: domain_06/subdomain_06_1 | dbt Source: Data mentah payload pengajuan kredit CDC message broker"
+        },
+        {
+          "schema": "datastaging",
+          "table": "stg_applications",
+          "name": "stg_applications",
+          "columns": [
+            {
+              "name": "application_id",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "ID pengajuan pinjaman (UUID string terstandarisasi)"
+            },
+            {
+              "name": "customer_cif",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor identifikasi unik nasabah (Customer Information File)"
+            },
+            {
+              "name": "rule_id",
+              "type": "INT64",
+              "nullable": true,
+              "default": null,
+              "comment": "ID rule scorecard kredit"
+            },
+            {
+              "name": "requested_amount",
+              "type": "NUMERIC",
+              "nullable": false,
+              "default": null,
+              "comment": "Nominal pengajuan plafond kredit dalam Rupiah"
+            },
+            {
+              "name": "risk_tier",
+              "type": "STRING",
+              "nullable": true,
+              "default": null,
+              "comment": "Kategori risiko kredit"
+            },
+            {
+              "name": "score_value",
+              "type": "INT64",
+              "nullable": true,
+              "default": null,
+              "comment": "Nilai skor kredit evaluasi engine"
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "nullable": false,
+              "default": null,
+              "comment": "Status verifikasi pengajuan kredit"
+            },
+            {
+              "name": "ingested_at",
+              "type": "TIMESTAMP",
+              "nullable": false,
+              "default": null,
+              "comment": "Waktu normalisasi staging"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_stg_applications",
+            "columns": [
+              "application_id"
+            ]
+          },
+          "uniques": [],
+          "indexes": [],
+          "checks": [],
+          "comment": "Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | DASG: domain_07/subdomain_07_1 | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]"
+        },
+        {
+          "schema": "legacy",
+          "table": "collateral_registers",
+          "name": "collateral_registers",
+          "columns": [
+            {
+              "name": "collateral_id",
+              "type": "INT",
+              "nullable": false,
+              "default": null,
+              "comment": "Identity primary key agunan"
+            },
+            {
+              "name": "customer_cif",
+              "type": "NVARCHAR(20)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor CIF nasabah pemilik agunan"
+            },
+            {
+              "name": "collateral_type",
+              "type": "NVARCHAR(50)",
+              "nullable": false,
+              "default": null,
+              "comment": "Jenis agunan (SHM, BPKB, Deposito)"
+            },
+            {
+              "name": "certificate_number",
+              "type": "NVARCHAR(100)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor sertifikat bukti kepemilikan agunan"
+            },
+            {
+              "name": "owner_name",
+              "type": "NVARCHAR(150)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nama pemilik yang tertera di sertifikat agunan"
+            },
+            {
+              "name": "appraisal_value",
+              "type": "DECIMAL(18,2)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nilai pasar hasil taksasi agunan"
+            },
+            {
+              "name": "liquidation_value",
+              "type": "DECIMAL(18,2)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nilai likuidasi agunan"
+            },
+            {
+              "name": "custody_branch_code",
+              "type": "NVARCHAR(10)",
+              "nullable": false,
+              "default": null,
+              "comment": "Kode unit cabang penyimpanan fisik dokumen jaminan"
+            },
+            {
+              "name": "is_verified",
+              "type": "BIT",
+              "nullable": false,
+              "default": "1",
+              "comment": "Flag verifikasi keaslian dokumen agunan"
+            },
+            {
+              "name": "registered_at",
+              "type": "DATETIME2",
+              "nullable": false,
+              "default": "GETDATE()",
+              "comment": "Waktu pencatatan agunan"
+            }
+          ],
+          "primaryKey": {
+            "name": "PK_collateral_registers",
+            "columns": [
+              "collateral_id"
+            ]
+          },
+          "uniques": [],
+          "indexes": [],
+          "checks": [],
+          "comment": "Master registrasi agunan kredit legacy yang dijamin oleh nasabah | DASG: domain_04/subdomain_04_1 | dbt Source: Master registrasi agunan kredit nasabah"
+        },
+        {
+          "schema": "scoring",
+          "table": "credit_applications",
+          "name": "credit_applications",
+          "columns": [
+            {
+              "name": "application_id",
+              "type": "UUID",
+              "nullable": false,
+              "default": null,
+              "comment": "UUID unik pengajuan pinjaman nasabah"
+            },
+            {
+              "name": "customer_cif",
+              "type": "VARCHAR(20)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nomor CIF nasabah Bank Raya"
+            },
+            {
+              "name": "rule_id",
+              "type": "INT",
+              "nullable": false,
+              "default": null,
+              "comment": "Foreign key ke master scorecard rules"
+            },
+            {
+              "name": "requested_amount",
+              "type": "NUMERIC(18,2)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nominal pinjaman yang diajukan dalam IDR"
+            },
+            {
+              "name": "tenor_months",
+              "type": "INT",
+              "nullable": false,
+              "default": "12",
+              "comment": "Jangka waktu pinjaman dalam bulan"
+            },
+            {
+              "name": "risk_tier",
+              "type": "VARCHAR(5)",
+              "nullable": false,
+              "default": null,
+              "comment": "Klasifikasi profil risiko (TIER_1 s.d TIER_5)"
+            },
+            {
+              "name": "score_value",
+              "type": "INT",
+              "nullable": false,
+              "default": null,
+              "comment": "Nilai skor kredit hasil evaluasi engine"
+            },
+            {
+              "name": "application_status",
+              "type": "VARCHAR(20)",
+              "nullable": false,
+              "default": "'IN_REVIEW'",
+              "comment": "Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED"
+            },
+            {
+              "name": "submitted_at",
+              "type": "TIMESTAMPTZ",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP",
+              "comment": "Waktu pengajuan diajukan"
+            },
+            {
+              "name": "approved_at",
+              "type": "TIMESTAMPTZ",
+              "nullable": true,
+              "default": null,
+              "comment": "Waktu persetujuan pinjaman"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_credit_applications",
+            "columns": [
+              "application_id"
+            ]
+          },
+          "uniques": [],
+          "indexes": [
+            {
+              "name": "idx_scoring_cif",
+              "columns": [
+                "customer_cif"
+              ]
+            },
+            {
+              "name": "idx_scoring_status",
+              "columns": [
+                "application_status"
+              ]
+            }
+          ],
+          "checks": [],
+          "comment": "Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya | DASG: domain_02/subdomain_02_2 | dbt Source: Pengajuan pinjaman debitur digital Bank Raya"
+        },
+        {
+          "schema": "scoring",
+          "table": "scorecard_rules",
+          "name": "scorecard_rules",
+          "columns": [
+            {
+              "name": "rule_id",
+              "type": "SERIAL",
+              "nullable": false,
+              "default": null,
+              "comment": "Primary key auto-increment scorecard rule"
+            },
+            {
+              "name": "rule_code",
+              "type": "VARCHAR(50)",
+              "nullable": false,
+              "default": null,
+              "comment": "Kode unik rule scorecard kredit (misal: SCR-MICRO-01)"
+            },
+            {
+              "name": "rule_name",
+              "type": "VARCHAR(100)",
+              "nullable": false,
+              "default": null,
+              "comment": "Nama deskriptif scorecard rule"
+            },
+            {
+              "name": "weight_percentage",
+              "type": "NUMERIC(5,2)",
+              "nullable": false,
+              "default": null,
+              "comment": "Bobot persentase kontribusi rule terhadap skor final"
+            },
+            {
+              "name": "cutoff_score",
+              "type": "INT",
+              "nullable": false,
+              "default": "600",
+              "comment": "Ambang batas nilai kelulusan kredit"
+            },
+            {
+              "name": "is_active",
+              "type": "BOOLEAN",
+              "nullable": false,
+              "default": "TRUE",
+              "comment": "Flag status keaktifan rule"
+            },
+            {
+              "name": "created_at",
+              "type": "TIMESTAMPTZ",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP",
+              "comment": "Waktu pembuatan record"
+            },
+            {
+              "name": "updated_at",
+              "type": "TIMESTAMPTZ",
+              "nullable": true,
+              "default": "CURRENT_TIMESTAMP",
+              "comment": "Waktu pembaruan record"
+            }
+          ],
+          "primaryKey": {
+            "name": "pk_scorecard_rules",
+            "columns": [
+              "rule_id"
+            ]
+          },
+          "uniques": [
+            {
+              "name": "uq_scorecard_rule_code",
+              "columns": [
+                "rule_code"
+              ]
+            }
+          ],
+          "indexes": [],
+          "checks": [],
+          "comment": "Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya | DASG: domain_02/subdomain_02_1 | dbt Source: Master aturan pembobotan scorecard evaluasi risiko"
+        }
+      ],
+      "relations": [
+        {
+          "name": "fk_credit_app_scorecard",
+          "src": {
+            "schema": "scoring",
+            "table": "credit_applications",
+            "column": "rule_id"
+          },
+          "ref": {
+            "schema": "scoring",
+            "table": "scorecard_rules",
+            "column": "rule_id"
+          }
+        },
+        {
+          "name": "fk_disbursement_scoring_app",
+          "src": {
+            "schema": "channel",
+            "table": "loan_disbursements",
+            "column": "application_id"
+          },
+          "ref": {
+            "schema": "scoring",
+            "table": "credit_applications",
+            "column": "application_id"
+          }
+        },
+        {
+          "name": "fk_stg_raw_applications",
+          "src": {
+            "schema": "datastaging",
+            "table": "stg_applications",
+            "column": "application_id"
+          },
+          "ref": {
+            "schema": "dataraw",
+            "table": "raw_applications",
+            "column": "raw_id"
+          }
+        },
+        {
+          "name": "fk_fct_stg_applications",
+          "src": {
+            "schema": "datamart",
+            "table": "fct_credit_scoring",
+            "column": "application_id"
+          },
+          "ref": {
+            "schema": "datastaging",
+            "table": "stg_applications",
+            "column": "application_id"
+          }
+        }
+      ],
+      "types": [
+        {
+          "schema": "datamart",
+          "name": "scoring_details",
+          "values": [
+            "model_version STRING",
+            "probability_of_default NUMERIC",
+            "score_cutoff INT64"
+          ]
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    }
+  ],
+  "usedLayout": "oltp/core_and_channels",
+  "layouts": {
+    "oltp/core_and_channels": {
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "blue",
+          "columns": []
+        },
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 500,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        },
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 450
+          },
+          "color": "amber",
+          "columns": []
+        },
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 500,
+            "top": 450
+          },
+          "color": "red",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "organize/bigquery_raw_to_mart": {
+      "tables": [
+        {
+          "id": "dataraw.raw_applications",
+          "position": {
+            "left": 100,
+            "top": 150
+          },
+          "color": "gray",
+          "columns": []
+        },
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 450,
+            "top": 150
+          },
+          "color": "teal",
+          "columns": []
+        },
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 800,
+            "top": 80
+          },
+          "color": "emerald",
+          "columns": []
+        },
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 800,
+            "top": 380
+          },
+          "color": "purple",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "deliver/superset_executive_bi": {
+      "tables": [
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 150,
+            "top": 120
+          },
+          "color": "emerald",
+          "columns": []
+        },
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 600,
+            "top": 120
+          },
+          "color": "purple",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "teams/credit_scoring": {
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "blue",
+          "columns": []
+        },
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 450,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        },
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 400
+          },
+          "color": "amber",
+          "columns": []
+        },
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 450,
+            "top": 400
+          },
+          "color": "teal",
+          "columns": []
+        },
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 800,
+            "top": 250
+          },
+          "color": "emerald",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "teams/regulatory_reporting": {
+      "tables": [
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 150,
+            "top": 150
+          },
+          "color": "red",
+          "columns": []
+        },
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 600,
+            "top": 150
+          },
+          "color": "purple",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_01": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_01/subdomain_01_1": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_01/subdomain_01_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_02": {
+      "tables": [
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        },
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 450,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_02/subdomain_02_1": {
+      "tables": [
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_02/subdomain_02_2": {
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_03": {
+      "tables": [
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "amber",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_03/subdomain_03_1": {
+      "tables": [
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "amber",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_03/subdomain_03_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_04": {
+      "tables": [
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "red",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_04/subdomain_04_1": {
+      "tables": [
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "red",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_04/subdomain_04_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_05": {
+      "tables": [
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "purple",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_05/subdomain_05_1": {
+      "tables": [
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "purple",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_05/subdomain_05_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_06": {
+      "tables": [
+        {
+          "id": "dataraw.raw_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "gray",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_06/subdomain_06_1": {
+      "tables": [
+        {
+          "id": "dataraw.raw_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "gray",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_06/subdomain_06_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_07": {
+      "tables": [
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "teal",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_07/subdomain_07_1": {
+      "tables": [
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "teal",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_07/subdomain_07_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_08": {
+      "tables": [
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "emerald",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_08/subdomain_08_1": {
+      "tables": [
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "emerald",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_08/subdomain_08_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_09": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_09/subdomain_09_1": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_09/subdomain_09_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_10": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_10/subdomain_10_1": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_10/subdomain_10_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_11": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_11/subdomain_11_1": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "dasg/domain_11/subdomain_11_2": {
+      "tables": [],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    },
+    "initial layout": {
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "blue",
+          "columns": []
+        },
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 500,
+            "top": 100
+          },
+          "color": "indigo",
+          "columns": []
+        },
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 450
+          },
+          "color": "amber",
+          "columns": []
+        },
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 500,
+            "top": 450
+          },
+          "color": "red",
+          "columns": []
+        }
+      ],
+      "createdAt": 1729900000000,
+      "updatedAt": 1729900000000
+    }
+  },
+  "createdAt": 1729900000000,
+  "updatedAt": 1729900000000,
+  "version": 2
+}
