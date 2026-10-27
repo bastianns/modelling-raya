@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Raya - Enterprise Data Dictionary & Catalog</title>
+    <title>Bank Raya - Enterprise Data Dictionary & Catalog (DASG 11-Domain)</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
         :root {
@@ -44,6 +44,38 @@
             font-size: 12px;
             font-weight: 600;
         }
+        .dasg-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .dasg-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .dasg-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .dasg-btn {
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fafbfc;
+            color: var(--secondary);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dasg-btn:hover { background: #ebecf0; }
+        .dasg-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         .search-bar {
             margin-bottom: 24px;
             display: flex;
@@ -94,6 +126,7 @@
         }
         .table-title { font-size: 17px; font-weight: 700; color: var(--secondary); }
         .table-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+        .badge-group { display: flex; gap: 8px; align-items: center; }
         .table-badge {
             background: #ebecf0;
             color: var(--secondary);
@@ -102,6 +135,14 @@
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
+        }
+        .dasg-badge {
+            background: #e6effc;
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
         }
         table {
             width: 100%;
@@ -148,12 +189,12 @@
 
     <div class="header">
         <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
-        <p>Framework: DAMA-DMBOK V.2 | Standar Keamanan: Zero-Credential-Exposure</p>
+        <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture</p>
         <div class="meta-badges">
-            <span class="badge">Generated: 2026-10-27 13:17:48</span>
+            <span class="badge">Generated: 2026-10-27 13:57:21</span>
             <span class="badge">Total Tabel: 8</span>
             <span class="badge">Total Relasi: 4</span>
-            <span class="badge">Domain: Scoring, Reporting, Warehouse, BI</span>
+            <span class="badge">DASG Architecture: 11 Domains</span>
         </div>
     </div>
 
@@ -164,8 +205,26 @@
         <div>• <b>WARN-03 (PK & Contracts):</b> 8/8 tabel memiliki Primary Key valid; kontrak dbt <code>not_null</code> 100% tervalidasi.</div>
     </div>
 
+    <div class="dasg-bar">
+        <div class="dasg-header">Bank Raya DASG 11-Domain Filter (Driven by dbt YAML metadata):</div>
+        <div class="dasg-buttons">
+            <button class="dasg-btn active" onclick="filterByDASG('all', this)">All Domains (11)</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_01', this)">Domain 1: CIF</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_02', this)">Domain 2: Scoring</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_03', this)">Domain 3: Channels</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_04', this)">Domain 4: Collateral</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_05', this)">Domain 5: SLIK OJK</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_06', this)">Domain 6: Raw</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_07', this)">Domain 7: Staging</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_08', this)">Domain 8: Mart</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_09', this)">Domain 9: BI</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_10', this)">Domain 10: Risk</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_11', this)">Domain 11: Governance</button>
+        </div>
+    </div>
+
     <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Cari nama tabel, nama kolom, tipe data, atau deskripsi bisnis..." onkeyup="filterCatalog()">
+        <input type="text" id="searchInput" placeholder="Cari nama tabel, kolom, tipe data, atau deskripsi bisnis..." onkeyup="filterCatalog()">
     </div>
 
     <div class="tabs">
@@ -387,13 +446,16 @@ erDiagram
 
     <div id="dictionaryView">
 
-        <div class="table-card" data-table="channel.loan_disbursements">
+        <div class="table-card" data-table="channel.loan_disbursements" data-domain="domain_03" data-subdomain="subdomain_03_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">channel.loan_disbursements</div>
-                    <div class="table-desc">Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya</div>
+                    <div class="table-desc">Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya | DASG: domain_03/subdomain_03_1 | dbt Source: Transaksi pencairan pinjaman via agen dan fintech partner</div>
                 </div>
-                <span class="table-badge">channel</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_03 / subdomain_03_1</span>
+                    <span class="table-badge">channel</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -473,13 +535,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="datamart.fct_credit_scoring">
+        <div class="table-card" data-table="datamart.fct_credit_scoring" data-domain="domain_08" data-subdomain="subdomain_08_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">datamart.fct_credit_scoring</div>
-                    <div class="table-desc">Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]</div>
+                    <div class="table-desc">Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | DASG: domain_08/subdomain_08_1 | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]</div>
                 </div>
-                <span class="table-badge">datamart</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_08 / subdomain_08_1</span>
+                    <span class="table-badge">datamart</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -552,13 +617,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="datamart.rpt_slik_ojk">
+        <div class="table-card" data-table="datamart.rpt_slik_ojk" data-domain="domain_05" data-subdomain="subdomain_05_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">datamart.rpt_slik_ojk</div>
-                    <div class="table-desc">Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]</div>
+                    <div class="table-desc">Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | DASG: domain_05/subdomain_05_1 | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]</div>
                 </div>
-                <span class="table-badge">datamart</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_05 / subdomain_05_1</span>
+                    <span class="table-badge">datamart</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -638,13 +706,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="dataraw.raw_applications">
+        <div class="table-card" data-table="dataraw.raw_applications" data-domain="domain_06" data-subdomain="subdomain_06_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">dataraw.raw_applications</div>
-                    <div class="table-desc">Penyimpanan data mentah pengajuan kredit dari CDC message broker | dbt Source: Data mentah payload pengajuan kredit dari message broker CDC</div>
+                    <div class="table-desc">Penyimpanan data mentah pengajuan kredit dari CDC message broker | DASG: domain_06/subdomain_06_1 | dbt Source: Data mentah payload pengajuan kredit CDC message broker</div>
                 </div>
-                <span class="table-badge">dataraw</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_06 / subdomain_06_1</span>
+                    <span class="table-badge">dataraw</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -696,13 +767,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="datastaging.stg_applications">
+        <div class="table-card" data-table="datastaging.stg_applications" data-domain="domain_07" data-subdomain="subdomain_07_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">datastaging.stg_applications</div>
-                    <div class="table-desc">Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]</div>
+                    <div class="table-desc">Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | DASG: domain_07/subdomain_07_1 | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]</div>
                 </div>
-                <span class="table-badge">datastaging</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_07 / subdomain_07_1</span>
+                    <span class="table-badge">datastaging</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -775,13 +849,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="legacy.collateral_registers">
+        <div class="table-card" data-table="legacy.collateral_registers" data-domain="domain_04" data-subdomain="subdomain_04_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">legacy.collateral_registers</div>
-                    <div class="table-desc">Master registrasi agunan kredit legacy yang dijamin oleh nasabah</div>
+                    <div class="table-desc">Master registrasi agunan kredit legacy yang dijamin oleh nasabah | DASG: domain_04/subdomain_04_1 | dbt Source: Master registrasi agunan kredit nasabah</div>
                 </div>
-                <span class="table-badge">legacy</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_04 / subdomain_04_1</span>
+                    <span class="table-badge">legacy</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -868,13 +945,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="scoring.credit_applications">
+        <div class="table-card" data-table="scoring.credit_applications" data-domain="domain_02" data-subdomain="subdomain_02_2">
             <div class="table-header">
                 <div>
                     <div class="table-title">scoring.credit_applications</div>
-                    <div class="table-desc">Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya</div>
+                    <div class="table-desc">Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya | DASG: domain_02/subdomain_02_2 | dbt Source: Pengajuan pinjaman debitur digital Bank Raya</div>
                 </div>
-                <span class="table-badge">scoring</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_02 / subdomain_02_2</span>
+                    <span class="table-badge">scoring</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -961,13 +1041,16 @@ erDiagram
             </table>
         </div>
         
-        <div class="table-card" data-table="scoring.scorecard_rules">
+        <div class="table-card" data-table="scoring.scorecard_rules" data-domain="domain_02" data-subdomain="subdomain_02_1">
             <div class="table-header">
                 <div>
                     <div class="table-title">scoring.scorecard_rules</div>
-                    <div class="table-desc">Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya</div>
+                    <div class="table-desc">Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya | DASG: domain_02/subdomain_02_1 | dbt Source: Master aturan pembobotan scorecard evaluasi risiko</div>
                 </div>
-                <span class="table-badge">scoring</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_02 / subdomain_02_1</span>
+                    <span class="table-badge">scoring</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -1045,6 +1128,8 @@ erDiagram
     <script>
         mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
 
+        let currentDomain = 'all';
+
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             if (tab === 'dictionary') {
@@ -1058,13 +1143,25 @@ erDiagram
             }
         }
 
+        function filterByDASG(domain, btn) {
+            currentDomain = domain;
+            document.querySelectorAll('.dasg-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterCatalog();
+        }
+
         function filterCatalog() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const cards = document.querySelectorAll('.table-card');
 
             cards.forEach(card => {
                 const text = card.innerText.toLowerCase();
-                if (text.includes(query)) {
+                const cardDomain = card.getAttribute('data-domain');
+
+                const matchesQuery = text.includes(query);
+                const matchesDomain = (currentDomain === 'all' || cardDomain === currentDomain);
+
+                if (matchesQuery && matchesDomain) {
                     card.style.display = 'block';
                 } else {
                     card.style.display = 'none';

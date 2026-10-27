@@ -2,18 +2,24 @@
 """
 Bank Raya - Enterprise Data Catalog & Dictionary HTML Generator
 Generates a standalone, interactive, offline-ready HTML Data Catalog for auditors,
-management, and cross-functional teams (DAMA-DMBOK V.2 Metadata Governance).
+management, and cross-functional teams (DAMA-DMBOK V.2 & DASG 11-Domain Governance).
 """
 
 import sys
 import json
+import re
 from pathlib import Path
 from datetime import datetime
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 def generate_html_catalog():
     base_dir = Path(__file__).resolve().parent.parent
     schema_path = base_dir / "sources" / "bank_raya_unified_schema.json"
-    layouts_path = base_dir / "layouts" / "bank_raya_domain_layouts.json"
+    dbt_path = base_dir / "inputs" / "multi_platform" / "dbt_schema.yml"
     docs_dir = base_dir / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     out_file = docs_dir / "data_dictionary.html"
@@ -24,6 +30,12 @@ def generate_html_catalog():
 
     with open(schema_path, "r", encoding="utf-8") as f:
         schema_data = json.load(f)
+
+    dasg_domains = []
+    if dbt_path.exists() and yaml:
+        with open(dbt_path, "r", encoding="utf-8") as f:
+            dbt_data = yaml.safe_load(f)
+            dasg_domains = dbt_data.get("dasg_domains", [])
 
     tables = schema_data.get("tables", [])
     relations = schema_data.get("relations", [])
@@ -53,7 +65,7 @@ def generate_html_catalog():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Raya - Enterprise Data Dictionary & Catalog</title>
+    <title>Bank Raya - Enterprise Data Dictionary & Catalog (DASG 11-Domain)</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
         :root {{
@@ -94,6 +106,38 @@ def generate_html_catalog():
             font-size: 12px;
             font-weight: 600;
         }}
+        .dasg-bar {{
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }}
+        .dasg-header {{
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }}
+        .dasg-buttons {{
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }}
+        .dasg-btn {{
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fafbfc;
+            color: var(--secondary);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        .dasg-btn:hover {{ background: #ebecf0; }}
+        .dasg-btn.active {{ background: var(--primary); color: white; border-color: var(--primary); }}
         .search-bar {{
             margin-bottom: 24px;
             display: flex;
@@ -144,6 +188,7 @@ def generate_html_catalog():
         }}
         .table-title {{ font-size: 17px; font-weight: 700; color: var(--secondary); }}
         .table-desc {{ font-size: 13px; color: var(--muted); margin-top: 4px; }}
+        .badge-group {{ display: flex; gap: 8px; align-items: center; }}
         .table-badge {{
             background: #ebecf0;
             color: var(--secondary);
@@ -152,6 +197,14 @@ def generate_html_catalog():
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
+        }}
+        .dasg-badge {{
+            background: #e6effc;
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
         }}
         table {{
             width: 100%;
@@ -198,12 +251,12 @@ def generate_html_catalog():
 
     <div class="header">
         <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
-        <p>Framework: DAMA-DMBOK V.2 | Standar Keamanan: Zero-Credential-Exposure</p>
+        <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture</p>
         <div class="meta-badges">
             <span class="badge">Generated: {now_str}</span>
             <span class="badge">Total Tabel: {len(tables)}</span>
             <span class="badge">Total Relasi: {len(relations)}</span>
-            <span class="badge">Domain: Scoring, Reporting, Warehouse, BI</span>
+            <span class="badge">DASG Architecture: 11 Domains</span>
         </div>
     </div>
 
@@ -214,8 +267,26 @@ def generate_html_catalog():
         <div>• <b>WARN-03 (PK & Contracts):</b> 8/8 tabel memiliki Primary Key valid; kontrak dbt <code>not_null</code> 100% tervalidasi.</div>
     </div>
 
+    <div class="dasg-bar">
+        <div class="dasg-header">Bank Raya DASG 11-Domain Filter (Driven by dbt YAML metadata):</div>
+        <div class="dasg-buttons">
+            <button class="dasg-btn active" onclick="filterByDASG('all', this)">All Domains (11)</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_01', this)">Domain 1: CIF</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_02', this)">Domain 2: Scoring</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_03', this)">Domain 3: Channels</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_04', this)">Domain 4: Collateral</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_05', this)">Domain 5: SLIK OJK</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_06', this)">Domain 6: Raw</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_07', this)">Domain 7: Staging</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_08', this)">Domain 8: Mart</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_09', this)">Domain 9: BI</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_10', this)">Domain 10: Risk</button>
+            <button class="dasg-btn" onclick="filterByDASG('domain_11', this)">Domain 11: Governance</button>
+        </div>
+    </div>
+
     <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Cari nama tabel, nama kolom, tipe data, atau deskripsi bisnis..." onkeyup="filterCatalog()">
+        <input type="text" id="searchInput" placeholder="Cari nama tabel, kolom, tipe data, atau deskripsi bisnis..." onkeyup="filterCatalog()">
     </div>
 
     <div class="tabs">
@@ -239,14 +310,22 @@ def generate_html_catalog():
         comment = tbl.get("comment", "-")
         pk_cols = tbl.get("primaryKey", {}).get("columns", []) if tbl.get("primaryKey") else []
 
+        # Extract DASG domain from comment
+        dasg_match = re.search(r"DASG:\s*(domain_\d+)/([^\s\|\]]+)", comment)
+        dasg_domain = dasg_match.group(1) if dasg_match else "unassigned"
+        dasg_subdomain = dasg_match.group(2) if dasg_match else "general"
+
         html_content += f"""
-        <div class="table-card" data-table="{schema}.{table_name}">
+        <div class="table-card" data-table="{schema}.{table_name}" data-domain="{dasg_domain}" data-subdomain="{dasg_subdomain}">
             <div class="table-header">
                 <div>
                     <div class="table-title">{schema}.{table_name}</div>
                     <div class="table-desc">{comment}</div>
                 </div>
-                <span class="table-badge">{schema}</span>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: {dasg_domain} / {dasg_subdomain}</span>
+                    <span class="table-badge">{schema}</span>
+                </div>
             </div>
             <table>
                 <thead>
@@ -290,6 +369,8 @@ def generate_html_catalog():
     <script>
         mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
 
+        let currentDomain = 'all';
+
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             if (tab === 'dictionary') {
@@ -303,13 +384,25 @@ def generate_html_catalog():
             }
         }
 
+        function filterByDASG(domain, btn) {
+            currentDomain = domain;
+            document.querySelectorAll('.dasg-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filterCatalog();
+        }
+
         function filterCatalog() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const cards = document.querySelectorAll('.table-card');
 
             cards.forEach(card => {
                 const text = card.innerText.toLowerCase();
-                if (text.includes(query)) {
+                const cardDomain = card.getAttribute('data-domain');
+
+                const matchesQuery = text.includes(query);
+                const matchesDomain = (currentDomain === 'all' || cardDomain === currentDomain);
+
+                if (matchesQuery && matchesDomain) {
                     card.style.display = 'block';
                 } else {
                     card.style.display = 'none';

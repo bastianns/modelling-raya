@@ -28,7 +28,7 @@ CREATE TABLE scoring.scorecard_rules (
     CONSTRAINT pk_scorecard_rules PRIMARY KEY (rule_id)
 );
 
-COMMENT ON TABLE scoring.scorecard_rules IS 'Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya';
+COMMENT ON TABLE scoring.scorecard_rules IS 'Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya | DASG: domain_02/subdomain_02_1 | dbt Source: Master aturan pembobotan scorecard evaluasi risiko';
 COMMENT ON COLUMN scoring.scorecard_rules.rule_id IS 'Primary key auto-increment scorecard rule';
 COMMENT ON COLUMN scoring.scorecard_rules.rule_code IS 'Kode unik rule scorecard kredit (misal: SCR-MICRO-01)';
 COMMENT ON COLUMN scoring.scorecard_rules.rule_name IS 'Nama deskriptif scorecard rule';
@@ -56,7 +56,7 @@ CREATE TABLE scoring.credit_applications (
     CONSTRAINT pk_credit_applications PRIMARY KEY (application_id)
 );
 
-COMMENT ON TABLE scoring.credit_applications IS 'Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya';
+COMMENT ON TABLE scoring.credit_applications IS 'Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya | DASG: domain_02/subdomain_02_2 | dbt Source: Pengajuan pinjaman debitur digital Bank Raya';
 COMMENT ON COLUMN scoring.credit_applications.application_id IS 'UUID unik pengajuan pinjaman nasabah';
 COMMENT ON COLUMN scoring.credit_applications.customer_cif IS 'Nomor CIF nasabah Bank Raya';
 COMMENT ON COLUMN scoring.credit_applications.rule_id IS 'Foreign key ke master scorecard rules';
@@ -85,7 +85,7 @@ CREATE TABLE channel.loan_disbursements (
     CONSTRAINT pk_loan_disbursements PRIMARY KEY (disbursement_id)
 );
 
-COMMENT ON TABLE channel.loan_disbursements IS 'Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya';
+COMMENT ON TABLE channel.loan_disbursements IS 'Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya | DASG: domain_03/subdomain_03_1 | dbt Source: Transaksi pencairan pinjaman via agen dan fintech partner';
 COMMENT ON COLUMN channel.loan_disbursements.disbursement_id IS 'Surrogate primary key auto increment';
 COMMENT ON COLUMN channel.loan_disbursements.application_id IS 'ID Pengajuan Kredit referensi ke scoring core engine';
 COMMENT ON COLUMN channel.loan_disbursements.partner_channel_code IS 'Kode identifikasi mitra agregator / keagenan digital';
@@ -114,7 +114,7 @@ CREATE TABLE legacy.collateral_registers (
     CONSTRAINT PK_collateral_registers PRIMARY KEY (collateral_id)
 );
 
-COMMENT ON TABLE legacy.collateral_registers IS 'Master registrasi agunan kredit legacy yang dijamin oleh nasabah';
+COMMENT ON TABLE legacy.collateral_registers IS 'Master registrasi agunan kredit legacy yang dijamin oleh nasabah | DASG: domain_04/subdomain_04_1 | dbt Source: Master registrasi agunan kredit nasabah';
 COMMENT ON COLUMN legacy.collateral_registers.collateral_id IS 'Identity primary key agunan';
 COMMENT ON COLUMN legacy.collateral_registers.customer_cif IS 'Nomor CIF nasabah pemilik agunan';
 COMMENT ON COLUMN legacy.collateral_registers.collateral_type IS 'Jenis agunan (SHM, BPKB, Deposito)';
@@ -139,7 +139,7 @@ CREATE TABLE dataraw.raw_applications (
     CONSTRAINT pk_raw_applications PRIMARY KEY (raw_id)
 );
 
-COMMENT ON TABLE dataraw.raw_applications IS 'Penyimpanan data mentah pengajuan kredit dari CDC message broker | dbt Source: Data mentah payload pengajuan kredit dari message broker CDC';
+COMMENT ON TABLE dataraw.raw_applications IS 'Penyimpanan data mentah pengajuan kredit dari CDC message broker | DASG: domain_06/subdomain_06_1 | dbt Source: Data mentah payload pengajuan kredit CDC message broker';
 COMMENT ON COLUMN dataraw.raw_applications.raw_id IS 'Surrogate identifier mentah ingestion data';
 COMMENT ON COLUMN dataraw.raw_applications.payload_json IS 'JSON string representasi event transaksi pengajuan kredit';
 COMMENT ON COLUMN dataraw.raw_applications.source_system IS 'Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)';
@@ -162,7 +162,7 @@ CREATE TABLE datastaging.stg_applications (
     CONSTRAINT pk_stg_applications PRIMARY KEY (application_id)
 );
 
-COMMENT ON TABLE datastaging.stg_applications IS 'Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]';
+COMMENT ON TABLE datastaging.stg_applications IS 'Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | DASG: domain_07/subdomain_07_1 | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]';
 COMMENT ON COLUMN datastaging.stg_applications.application_id IS 'ID pengajuan pinjaman (UUID string terstandarisasi)';
 COMMENT ON COLUMN datastaging.stg_applications.customer_cif IS 'Nomor identifikasi unik nasabah (Customer Information File)';
 COMMENT ON COLUMN datastaging.stg_applications.rule_id IS 'ID rule scorecard kredit';
@@ -188,7 +188,7 @@ CREATE TABLE datamart.fct_credit_scoring (
     CONSTRAINT pk_fct_credit_scoring PRIMARY KEY (fact_id)
 );
 
-COMMENT ON TABLE datamart.fct_credit_scoring IS 'Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN (''TIER_3'', ''TIER_4'', ''TIER_5'') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]';
+COMMENT ON TABLE datamart.fct_credit_scoring IS 'Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | DASG: domain_08/subdomain_08_1 | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN (''TIER_3'', ''TIER_4'', ''TIER_5'') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]';
 COMMENT ON COLUMN datamart.fct_credit_scoring.fact_id IS 'Surrogate key fakta penilaian kredit';
 COMMENT ON COLUMN datamart.fct_credit_scoring.application_id IS 'Relasi foreign key ke tabel staging pengajuan pinjaman';
 COMMENT ON COLUMN datamart.fct_credit_scoring.customer_cif IS 'Nomor CIF nasabah yang dinilai skor kreditnya';
@@ -215,7 +215,7 @@ CREATE TABLE datamart.rpt_slik_ojk (
     CONSTRAINT pk_rpt_slik_ojk PRIMARY KEY (report_id)
 );
 
-COMMENT ON TABLE datamart.rpt_slik_ojk IS 'Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN (''3'',''4'',''5'') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]';
+COMMENT ON TABLE datamart.rpt_slik_ojk IS 'Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | DASG: domain_05/subdomain_05_1 | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN (''3'',''4'',''5'') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]';
 COMMENT ON COLUMN datamart.rpt_slik_ojk.report_id IS 'Primary key baris pelaporan bulanan SLIK OJK';
 COMMENT ON COLUMN datamart.rpt_slik_ojk.period_yyyymm IS 'Periode akuntansi pelaporan format tahun-bulan (YYYYMM)';
 COMMENT ON COLUMN datamart.rpt_slik_ojk.account_number IS 'Nomor rekening fasilitas kredit debitur';

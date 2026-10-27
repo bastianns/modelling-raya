@@ -98,7 +98,7 @@
         }
       ],
       "checks": [],
-      "comment": "Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya"
+      "comment": "Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya | DASG: domain_03/subdomain_03_1 | dbt Source: Transaksi pencairan pinjaman via agen dan fintech partner"
     },
     {
       "schema": "datamart",
@@ -171,7 +171,7 @@
       "uniques": [],
       "indexes": [],
       "checks": [],
-      "comment": "Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]"
+      "comment": "Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur | DASG: domain_08/subdomain_08_1 | dbt Model: Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: avg_credit_score (AVG(credit_score)): Rata-rata skor kredit nasabah yang disetujui; total_approved_amount (SUM(approved_amount)): Total akumulasi plafond kredit yang disetujui; high_risk_exposure (COUNT(CASE WHEN risk_tier IN ('TIER_3', 'TIER_4', 'TIER_5') THEN 1 END)): Jumlah aplikasi pinjaman dengan profil risiko tinggi]"
     },
     {
       "schema": "datamart",
@@ -251,7 +251,7 @@
       "uniques": [],
       "indexes": [],
       "checks": [],
-      "comment": "Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]"
+      "comment": "Tabel data mart pelaporan berkala bulanan debitur ke regulator SLIK OJK | DASG: domain_05/subdomain_05_1 | dbt Model: Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily] [Superset Metrics: total_outstanding (SUM(outstanding_balance)): Total baki debet pinjaman aktif seluruh debitur; npl_ratio (SUM(CASE WHEN collectibility_status IN ('3','4','5') THEN outstanding_balance ELSE 0 END) / NULLIF(SUM(outstanding_balance), 0) * 100): Persentase rasio kredit macet/bermasalah (NPL) Bank Raya]"
     },
     {
       "schema": "dataraw",
@@ -303,7 +303,7 @@
       "uniques": [],
       "indexes": [],
       "checks": [],
-      "comment": "Penyimpanan data mentah pengajuan kredit dari CDC message broker | dbt Source: Data mentah payload pengajuan kredit dari message broker CDC"
+      "comment": "Penyimpanan data mentah pengajuan kredit dari CDC message broker | DASG: domain_06/subdomain_06_1 | dbt Source: Data mentah payload pengajuan kredit CDC message broker"
     },
     {
       "schema": "datastaging",
@@ -376,7 +376,7 @@
       "uniques": [],
       "indexes": [],
       "checks": [],
-      "comment": "Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]"
+      "comment": "Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik | DASG: domain_07/subdomain_07_1 | dbt Model: Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya [Airflow Orchestrated: DAG dags_raya_credit_risk_pipeline @daily]"
     },
     {
       "schema": "legacy",
@@ -463,7 +463,7 @@
       "uniques": [],
       "indexes": [],
       "checks": [],
-      "comment": "Master registrasi agunan kredit legacy yang dijamin oleh nasabah"
+      "comment": "Master registrasi agunan kredit legacy yang dijamin oleh nasabah | DASG: domain_04/subdomain_04_1 | dbt Source: Master registrasi agunan kredit nasabah"
     },
     {
       "schema": "scoring",
@@ -563,7 +563,7 @@
         }
       ],
       "checks": [],
-      "comment": "Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya"
+      "comment": "Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya | DASG: domain_02/subdomain_02_2 | dbt Source: Pengajuan pinjaman debitur digital Bank Raya"
     },
     {
       "schema": "scoring",
@@ -643,7 +643,7 @@
       ],
       "indexes": [],
       "checks": [],
-      "comment": "Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya"
+      "comment": "Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya | DASG: domain_02/subdomain_02_1 | dbt Source: Master aturan pembobotan scorecard evaluasi risiko"
     }
   ],
   "relations": [

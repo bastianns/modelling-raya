@@ -165,6 +165,314 @@
           "color": "purple"
         }
       ]
+    },
+    "dasg/domain_01": {
+      "name": "DASG - Domain 1",
+      "description": "DASG Data Domain 1 (Customer & CIF Management)",
+      "tables": []
+    },
+    "dasg/domain_01/subdomain_01_1": {
+      "name": "DASG - Subdomain 1.1 - CIF Master Identity",
+      "description": "Subdomain view for Subdomain 1.1 - CIF Master Identity under Domain 1",
+      "tables": []
+    },
+    "dasg/domain_01/subdomain_01_2": {
+      "name": "DASG - Subdomain 1.2 - Customer KYC & Demographic",
+      "description": "Subdomain view for Subdomain 1.2 - Customer KYC & Demographic under Domain 1",
+      "tables": []
+    },
+    "dasg/domain_02": {
+      "name": "DASG - Domain 2",
+      "description": "DASG Data Domain 2 (Credit & Risk Scoring)",
+      "tables": [
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "indigo"
+        },
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 450,
+            "top": 100
+          },
+          "color": "indigo"
+        }
+      ]
+    },
+    "dasg/domain_02/subdomain_02_1": {
+      "name": "DASG - Subdomain 2.1 - Master Scorecard Rules",
+      "description": "Subdomain view for Subdomain 2.1 - Master Scorecard Rules under Domain 2",
+      "tables": [
+        {
+          "id": "scoring.scorecard_rules",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "indigo"
+        }
+      ]
+    },
+    "dasg/domain_02/subdomain_02_2": {
+      "name": "DASG - Subdomain 2.2 - Credit Applications & Underwriting",
+      "description": "Subdomain view for Subdomain 2.2 - Credit Applications & Underwriting under Domain 2",
+      "tables": [
+        {
+          "id": "scoring.credit_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "indigo"
+        }
+      ]
+    },
+    "dasg/domain_03": {
+      "name": "DASG - Domain 3",
+      "description": "DASG Data Domain 3 (Channel Distribution & Partners)",
+      "tables": [
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "amber"
+        }
+      ]
+    },
+    "dasg/domain_03/subdomain_03_1": {
+      "name": "DASG - Subdomain 3.1 - Digital Partner Disbursements",
+      "description": "Subdomain view for Subdomain 3.1 - Digital Partner Disbursements under Domain 3",
+      "tables": [
+        {
+          "id": "channel.loan_disbursements",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "amber"
+        }
+      ]
+    },
+    "dasg/domain_03/subdomain_03_2": {
+      "name": "DASG - Subdomain 3.2 - Agent Banking Settlement",
+      "description": "Subdomain view for Subdomain 3.2 - Agent Banking Settlement under Domain 3",
+      "tables": []
+    },
+    "dasg/domain_04": {
+      "name": "DASG - Domain 4",
+      "description": "DASG Data Domain 4 (Collateral & Asset Custody)",
+      "tables": [
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "red"
+        }
+      ]
+    },
+    "dasg/domain_04/subdomain_04_1": {
+      "name": "DASG - Subdomain 4.1 - Legacy Collateral Registers",
+      "description": "Subdomain view for Subdomain 4.1 - Legacy Collateral Registers under Domain 4",
+      "tables": [
+        {
+          "id": "legacy.collateral_registers",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "red"
+        }
+      ]
+    },
+    "dasg/domain_04/subdomain_04_2": {
+      "name": "DASG - Subdomain 4.2 - Appraisal & Valuation",
+      "description": "Subdomain view for Subdomain 4.2 - Appraisal & Valuation under Domain 4",
+      "tables": []
+    },
+    "dasg/domain_05": {
+      "name": "DASG - Domain 5",
+      "description": "DASG Data Domain 5 (Regulatory & Compliance Reporting)",
+      "tables": [
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "purple"
+        }
+      ]
+    },
+    "dasg/domain_05/subdomain_05_1": {
+      "name": "DASG - Subdomain 5.1 - SLIK OJK Monthly Snapshot",
+      "description": "Subdomain view for Subdomain 5.1 - SLIK OJK Monthly Snapshot under Domain 5",
+      "tables": [
+        {
+          "id": "datamart.rpt_slik_ojk",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "purple"
+        }
+      ]
+    },
+    "dasg/domain_05/subdomain_05_2": {
+      "name": "DASG - Subdomain 5.2 - LBU & LBBU Compliance",
+      "description": "Subdomain view for Subdomain 5.2 - LBU & LBBU Compliance under Domain 5",
+      "tables": []
+    },
+    "dasg/domain_06": {
+      "name": "DASG - Domain 6",
+      "description": "DASG Data Domain 6 (Data Lakehouse Ingestion & Raw CDC)",
+      "tables": [
+        {
+          "id": "dataraw.raw_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "gray"
+        }
+      ]
+    },
+    "dasg/domain_06/subdomain_06_1": {
+      "name": "DASG - Subdomain 6.1 - Ingest Raw Event Payloads",
+      "description": "Subdomain view for Subdomain 6.1 - Ingest Raw Event Payloads under Domain 6",
+      "tables": [
+        {
+          "id": "dataraw.raw_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "gray"
+        }
+      ]
+    },
+    "dasg/domain_06/subdomain_06_2": {
+      "name": "DASG - Subdomain 6.2 - Kafka Stream Offsets",
+      "description": "Subdomain view for Subdomain 6.2 - Kafka Stream Offsets under Domain 6",
+      "tables": []
+    },
+    "dasg/domain_07": {
+      "name": "DASG - Domain 7",
+      "description": "DASG Data Domain 7 (Data Staging & Normalization)",
+      "tables": [
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "teal"
+        }
+      ]
+    },
+    "dasg/domain_07/subdomain_07_1": {
+      "name": "DASG - Subdomain 7.1 - Normalized Staging Entities",
+      "description": "Subdomain view for Subdomain 7.1 - Normalized Staging Entities under Domain 7",
+      "tables": [
+        {
+          "id": "datastaging.stg_applications",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "teal"
+        }
+      ]
+    },
+    "dasg/domain_07/subdomain_07_2": {
+      "name": "DASG - Subdomain 7.2 - Cleansing & Deduplication",
+      "description": "Subdomain view for Subdomain 7.2 - Cleansing & Deduplication under Domain 7",
+      "tables": []
+    },
+    "dasg/domain_08": {
+      "name": "DASG - Domain 8",
+      "description": "DASG Data Domain 8 (Data Mart & Analytic Facts)",
+      "tables": [
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "emerald"
+        }
+      ]
+    },
+    "dasg/domain_08/subdomain_08_1": {
+      "name": "DASG - Subdomain 8.1 - Credit Scoring Mart Facts",
+      "description": "Subdomain view for Subdomain 8.1 - Credit Scoring Mart Facts under Domain 8",
+      "tables": [
+        {
+          "id": "datamart.fct_credit_scoring",
+          "position": {
+            "left": 100,
+            "top": 100
+          },
+          "color": "emerald"
+        }
+      ]
+    },
+    "dasg/domain_08/subdomain_08_2": {
+      "name": "DASG - Subdomain 8.2 - Portfolio Analytics Mart",
+      "description": "Subdomain view for Subdomain 8.2 - Portfolio Analytics Mart under Domain 8",
+      "tables": []
+    },
+    "dasg/domain_09": {
+      "name": "DASG - Domain 9",
+      "description": "DASG Data Domain 9 (BI Delivery & Semantic Datasets)",
+      "tables": []
+    },
+    "dasg/domain_09/subdomain_09_1": {
+      "name": "DASG - Subdomain 9.1 - Executive Metrics & KPI",
+      "description": "Subdomain view for Subdomain 9.1 - Executive Metrics & KPI under Domain 9",
+      "tables": []
+    },
+    "dasg/domain_09/subdomain_09_2": {
+      "name": "DASG - Subdomain 9.2 - Superset Semantic Models",
+      "description": "Subdomain view for Subdomain 9.2 - Superset Semantic Models under Domain 9",
+      "tables": []
+    },
+    "dasg/domain_10": {
+      "name": "DASG - Domain 10",
+      "description": "DASG Data Domain 10 (Risk Management & Portfolio Health)",
+      "tables": []
+    },
+    "dasg/domain_10/subdomain_10_1": {
+      "name": "DASG - Subdomain 10.1 - NPL & Delinquency Exposure",
+      "description": "Subdomain view for Subdomain 10.1 - NPL & Delinquency Exposure under Domain 10",
+      "tables": []
+    },
+    "dasg/domain_10/subdomain_10_2": {
+      "name": "DASG - Subdomain 10.2 - Probability of Default (PD)",
+      "description": "Subdomain view for Subdomain 10.2 - Probability of Default (PD) under Domain 10",
+      "tables": []
+    },
+    "dasg/domain_11": {
+      "name": "DASG - Domain 11",
+      "description": "DASG Data Domain 11 (Audit, Data Lineage & Governance)",
+      "tables": []
+    },
+    "dasg/domain_11/subdomain_11_1": {
+      "name": "DASG - Subdomain 11.1 - Data Lineage Traceability",
+      "description": "Subdomain view for Subdomain 11.1 - Data Lineage Traceability under Domain 11",
+      "tables": []
+    },
+    "dasg/domain_11/subdomain_11_2": {
+      "name": "DASG - Subdomain 11.2 - Shift-Left Integrity Rules",
+      "description": "Subdomain view for Subdomain 11.2 - Shift-Left Integrity Rules under Domain 11",
+      "tables": []
     }
   }
 }

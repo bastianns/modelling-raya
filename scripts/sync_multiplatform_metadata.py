@@ -29,6 +29,7 @@ class MultiPlatformMetadataParser:
         self.dbt_metadata = {}
         self.superset_metadata = {}
         self.airflow_metadata = {}
+        self.dasg_domains = []
 
     def parse_postgres(self):
         pg_file = self.inputs_dir / "oltp_postgres.sql"
@@ -271,6 +272,9 @@ class MultiPlatformMetadataParser:
             with open(dbt_file, "r", encoding="utf-8") as f:
                 dbt_data = yaml.safe_load(f)
 
+            # Extract DASG 11 Domains
+            self.dasg_domains = dbt_data.get("dasg_domains", [])
+
             # Process sources
             for source in dbt_data.get("sources", []):
                 s_name = source.get("name")
@@ -278,6 +282,14 @@ class MultiPlatformMetadataParser:
                     t_name = tbl.get("name")
                     key = (s_name, t_name)
                     if key in self.tables:
+                        meta = tbl.get("meta") or source.get("meta") or {}
+                        if meta.get("domain"):
+                            self.tables[key]["dasg_domain"] = meta.get("domain")
+                            self.tables[key]["dasg_domain_name"] = meta.get("domain_name", meta.get("domain"))
+                            self.tables[key]["dasg_subdomain"] = meta.get("subdomain")
+                            self.tables[key]["dasg_subdomain_name"] = meta.get("subdomain_name", meta.get("subdomain"))
+                            self.tables[key]["comment"] += f" | DASG: {self.tables[key]['dasg_domain']}/{self.tables[key].get('dasg_subdomain', 'all')}"
+
                         if tbl.get("description"):
                             self.tables[key]["comment"] += f" | dbt Source: {tbl['description']}"
                         for col in tbl.get("columns", []):
@@ -292,6 +304,14 @@ class MultiPlatformMetadataParser:
                 # find matching table across schemas
                 for (s_name, t_name), t_dict in self.tables.items():
                     if t_name == m_name:
+                        meta = model.get("meta") or {}
+                        if meta.get("domain"):
+                            t_dict["dasg_domain"] = meta.get("domain")
+                            t_dict["dasg_domain_name"] = meta.get("domain_name", meta.get("domain"))
+                            t_dict["dasg_subdomain"] = meta.get("subdomain")
+                            t_dict["dasg_subdomain_name"] = meta.get("subdomain_name", meta.get("subdomain"))
+                            t_dict["comment"] += f" | DASG: {t_dict['dasg_domain']}/{t_dict.get('dasg_subdomain', 'all')}"
+
                         if model.get("description"):
                             t_dict["comment"] += f" | dbt Model: {model['description']}"
                         for col in model.get("columns", []):
@@ -549,6 +569,49 @@ class AzimuttTranspiler:
                 ]
             }
         }
+
+        # DASG 11-Domain Taxonomy Layouts (Bank Raya Data Governance)
+        colors = ["blue", "indigo", "amber", "red", "purple", "gray", "teal", "emerald", "orange", "cyan", "pink"]
+        for idx, dom in enumerate(self.parser.dasg_domains):
+            dom_id = dom.get("id")
+            dom_name = dom.get("name", dom_id)
+            dom_desc = dom.get("description", "")
+            dom_color = colors[idx % len(colors)]
+
+            # Tables in this domain
+            matching_tables = []
+            for (s_name, t_name), tbl in self.parser.tables.items():
+                if tbl.get("dasg_domain") == dom_id:
+                    matching_tables.append({
+                        "id": f"{s_name}.{t_name}",
+                        "position": {"left": 100 + len(matching_tables) * 350, "top": 100},
+                        "color": dom_color
+                    })
+
+            layouts[f"dasg/{dom_id}"] = {
+                "name": f"DASG - {dom_name}",
+                "description": dom_desc,
+                "tables": matching_tables
+            }
+
+            # Subdomain layouts
+            for sub in dom.get("subdomains", []):
+                sub_id = sub.get("id")
+                sub_name = sub.get("name", sub_id)
+                sub_tables = []
+                for (s_name, t_name), tbl in self.parser.tables.items():
+                    if tbl.get("dasg_subdomain") == sub_id:
+                        sub_tables.append({
+                            "id": f"{s_name}.{t_name}",
+                            "position": {"left": 100 + len(sub_tables) * 350, "top": 100},
+                            "color": dom_color
+                        })
+                layouts[f"dasg/{dom_id}/{sub_id}"] = {
+                    "name": f"DASG - {sub_name}",
+                    "description": f"Subdomain view for {sub_name} under {dom_name}",
+                    "tables": sub_tables
+                }
+
         return {"layouts": layouts}
 
 

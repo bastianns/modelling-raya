@@ -1,33 +1,215 @@
 version: 2
 
 # ==============================================================================
-# Bank Raya dbt Data Contracts & Governance Catalog
-# Architecture: DAMA-DMBOK V.2 Data Modeling & Design
-# Platform: BigQuery OLAP Warehouse Models
+# Bank Raya dbt Data Contracts & DASG Domain Taxonomy Catalog
+# Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture
+# Driven by: dbt YAML metadata (meta.domain & meta.subdomain)
 # ==============================================================================
 
+# Master Registry 11 Domain & Sub-domain DASG Bank Raya
+dasg_domains:
+  - id: "domain_01"
+    name: "Domain 1"
+    description: "DASG Data Domain 1 (Customer & CIF Management)"
+    subdomains:
+      - id: "subdomain_01_1"
+        name: "Subdomain 1.1 - CIF Master Identity"
+      - id: "subdomain_01_2"
+        name: "Subdomain 1.2 - Customer KYC & Demographic"
+
+  - id: "domain_02"
+    name: "Domain 2"
+    description: "DASG Data Domain 2 (Credit & Risk Scoring)"
+    subdomains:
+      - id: "subdomain_02_1"
+        name: "Subdomain 2.1 - Master Scorecard Rules"
+      - id: "subdomain_02_2"
+        name: "Subdomain 2.2 - Credit Applications & Underwriting"
+
+  - id: "domain_03"
+    name: "Domain 3"
+    description: "DASG Data Domain 3 (Channel Distribution & Partners)"
+    subdomains:
+      - id: "subdomain_03_1"
+        name: "Subdomain 3.1 - Digital Partner Disbursements"
+      - id: "subdomain_03_2"
+        name: "Subdomain 3.2 - Agent Banking Settlement"
+
+  - id: "domain_04"
+    name: "Domain 4"
+    description: "DASG Data Domain 4 (Collateral & Asset Custody)"
+    subdomains:
+      - id: "subdomain_04_1"
+        name: "Subdomain 4.1 - Legacy Collateral Registers"
+      - id: "subdomain_04_2"
+        name: "Subdomain 4.2 - Appraisal & Valuation"
+
+  - id: "domain_05"
+    name: "Domain 5"
+    description: "DASG Data Domain 5 (Regulatory & Compliance Reporting)"
+    subdomains:
+      - id: "subdomain_05_1"
+        name: "Subdomain 5.1 - SLIK OJK Monthly Snapshot"
+      - id: "subdomain_05_2"
+        name: "Subdomain 5.2 - LBU & LBBU Compliance"
+
+  - id: "domain_06"
+    name: "Domain 6"
+    description: "DASG Data Domain 6 (Data Lakehouse Ingestion & Raw CDC)"
+    subdomains:
+      - id: "subdomain_06_1"
+        name: "Subdomain 6.1 - Ingest Raw Event Payloads"
+      - id: "subdomain_06_2"
+        name: "Subdomain 6.2 - Kafka Stream Offsets"
+
+  - id: "domain_07"
+    name: "Domain 7"
+    description: "DASG Data Domain 7 (Data Staging & Normalization)"
+    subdomains:
+      - id: "subdomain_07_1"
+        name: "Subdomain 7.1 - Normalized Staging Entities"
+      - id: "subdomain_07_2"
+        name: "Subdomain 7.2 - Cleansing & Deduplication"
+
+  - id: "domain_08"
+    name: "Domain 8"
+    description: "DASG Data Domain 8 (Data Mart & Analytic Facts)"
+    subdomains:
+      - id: "subdomain_08_1"
+        name: "Subdomain 8.1 - Credit Scoring Mart Facts"
+      - id: "subdomain_08_2"
+        name: "Subdomain 8.2 - Portfolio Analytics Mart"
+
+  - id: "domain_09"
+    name: "Domain 9"
+    description: "DASG Data Domain 9 (BI Delivery & Semantic Datasets)"
+    subdomains:
+      - id: "subdomain_09_1"
+        name: "Subdomain 9.1 - Executive Metrics & KPI"
+      - id: "subdomain_09_2"
+        name: "Subdomain 9.2 - Superset Semantic Models"
+
+  - id: "domain_10"
+    name: "Domain 10"
+    description: "DASG Data Domain 10 (Risk Management & Portfolio Health)"
+    subdomains:
+      - id: "subdomain_10_1"
+        name: "Subdomain 10.1 - NPL & Delinquency Exposure"
+      - id: "subdomain_10_2"
+        name: "Subdomain 10.2 - Probability of Default (PD)"
+
+  - id: "domain_11"
+    name: "Domain 11"
+    description: "DASG Data Domain 11 (Audit, Data Lineage & Governance)"
+    subdomains:
+      - id: "subdomain_11_1"
+        name: "Subdomain 11.1 - Data Lineage Traceability"
+      - id: "subdomain_11_2"
+        name: "Subdomain 11.2 - Shift-Left Integrity Rules"
+
+# ------------------------------------------------------------------------------
+# Ingestion Sources (OLTP Core, Channels, Legacy & Data Raw)
+# ------------------------------------------------------------------------------
 sources:
+  - name: scoring
+    description: "Core OLTP Risk & Scoring PostgreSQL Engine"
+    meta:
+      domain: "domain_02"
+      domain_name: "Domain 2"
+    tables:
+      - name: scorecard_rules
+        description: "Master aturan pembobotan scorecard evaluasi risiko"
+        meta:
+          domain: "domain_02"
+          subdomain: "subdomain_02_1"
+          subdomain_name: "Subdomain 2.1 - Master Scorecard Rules"
+        columns:
+          - name: rule_id
+            data_tests: [not_null, unique]
+          - name: rule_code
+            data_tests: [not_null, unique]
+
+      - name: credit_applications
+        description: "Pengajuan pinjaman debitur digital Bank Raya"
+        meta:
+          domain: "domain_02"
+          subdomain: "subdomain_02_2"
+          subdomain_name: "Subdomain 2.2 - Credit Applications & Underwriting"
+        columns:
+          - name: application_id
+            data_tests: [not_null, unique]
+          - name: customer_cif
+            data_tests: [not_null]
+
+  - name: channel
+    description: "Channel Mitra dan Distribusi Pinjaman MySQL"
+    meta:
+      domain: "domain_03"
+      domain_name: "Domain 3"
+    tables:
+      - name: loan_disbursements
+        description: "Transaksi pencairan pinjaman via agen dan fintech partner"
+        meta:
+          domain: "domain_03"
+          subdomain: "subdomain_03_1"
+          subdomain_name: "Subdomain 3.1 - Digital Partner Disbursements"
+        columns:
+          - name: disbursement_id
+            data_tests: [not_null, unique]
+          - name: application_id
+            data_tests: [not_null]
+
+  - name: legacy
+    description: "Legacy Core Banking SQL Server"
+    meta:
+      domain: "domain_04"
+      domain_name: "Domain 4"
+    tables:
+      - name: collateral_registers
+        description: "Master registrasi agunan kredit nasabah"
+        meta:
+          domain: "domain_04"
+          subdomain: "subdomain_04_1"
+          subdomain_name: "Subdomain 4.1 - Legacy Collateral Registers"
+        columns:
+          - name: collateral_id
+            data_tests: [not_null, unique]
+          - name: customer_cif
+            data_tests: [not_null]
+
   - name: dataraw
-    description: "Lapisan data mentah (ingestion layer) Data Warehouse Bank Raya"
+    description: "Lapisan data mentah (ingestion layer) Data Warehouse BigQuery"
+    meta:
+      domain: "domain_06"
+      domain_name: "Domain 6"
     tables:
       - name: raw_applications
-        description: "Data mentah payload pengajuan kredit dari message broker CDC"
+        description: "Data mentah payload pengajuan kredit CDC message broker"
+        meta:
+          domain: "domain_06"
+          subdomain: "subdomain_06_1"
+          subdomain_name: "Subdomain 6.1 - Ingest Raw Event Payloads"
         columns:
           - name: raw_id
             description: "Surrogate identifier mentah ingestion data"
-            data_tests:
-              - not_null
-              - unique
+            data_tests: [not_null, unique]
           - name: payload_json
             description: "JSON string representasi event transaksi pengajuan kredit"
           - name: source_system
             description: "Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)"
-            data_tests:
-              - not_null
+            data_tests: [not_null]
 
+# ------------------------------------------------------------------------------
+# Transformed Models (Warehouse Staging, Data Mart & Reporting)
+# ------------------------------------------------------------------------------
 models:
   - name: stg_applications
     description: "Model staging terstandarisasi untuk pengajuan kredit digital Bank Raya"
+    meta:
+      domain: "domain_07"
+      domain_name: "Domain 7"
+      subdomain: "subdomain_07_1"
+      subdomain_name: "Subdomain 7.1 - Normalized Staging Entities"
     columns:
       - name: application_id
         description: "ID pengajuan pinjaman (UUID string terstandarisasi)"
@@ -39,25 +221,25 @@ models:
               field: raw_id
       - name: customer_cif
         description: "Nomor identifikasi unik nasabah (Customer Information File)"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: requested_amount
         description: "Nominal pengajuan plafond kredit dalam Rupiah"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: status
         description: "Status verifikasi pengajuan kredit"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
 
   - name: fct_credit_scoring
     description: "Data Mart Fakta Credit Scoring untuk evaluasi risiko dan limit debitur"
+    meta:
+      domain: "domain_08"
+      domain_name: "Domain 8"
+      subdomain: "subdomain_08_1"
+      subdomain_name: "Subdomain 8.1 - Credit Scoring Mart Facts"
     columns:
       - name: fact_id
         description: "Surrogate key fakta penilaian kredit"
-        data_tests:
-          - not_null
-          - unique
+        data_tests: [not_null, unique]
       - name: application_id
         description: "Relasi foreign key ke tabel staging pengajuan pinjaman"
         data_tests:
@@ -67,34 +249,31 @@ models:
               field: application_id
       - name: customer_cif
         description: "Nomor CIF nasabah yang dinilai skor kreditnya"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: credit_score
         description: "Nilai skor kredit terhitung (skala 300 - 850)"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: risk_tier
         description: "Klasifikasi profil risiko nasabah (TIER_1 s.d. TIER_5)"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
 
   - name: rpt_slik_ojk
     description: "Data Mart Pelaporan Kepatuhan Regulator SLIK OJK Bulanan"
+    meta:
+      domain: "domain_05"
+      domain_name: "Domain 5"
+      subdomain: "subdomain_05_1"
+      subdomain_name: "Subdomain 5.1 - SLIK OJK Monthly Snapshot"
     columns:
       - name: report_id
         description: "Primary key baris pelaporan bulanan SLIK OJK"
-        data_tests:
-          - not_null
-          - unique
+        data_tests: [not_null, unique]
       - name: period_yyyymm
         description: "Periode akuntansi pelaporan format tahun-bulan (YYYYMM)"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: collectibility_status
         description: "Kolektibilitas debitur per POJK (1: Lancar, 2: DPK, 3: Kurang Lancar, 4: Diragukan, 5: Macet)"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
       - name: outstanding_balance
         description: "Total saldo pokok pinjaman aktif"
-        data_tests:
-          - not_null
+        data_tests: [not_null]
