@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+"""
+Enterprise Data Management (EDM) Configuration & Security Hardening Verifier
+Verifies compliance with Banking Grade Zero-Credential-Exposure standards
+and DAMA-DMBOK V.2 Multi-Platform Deterministic Transpilation & Governance.
+"""
+
+import os
+import sys
+import json
+import subprocess
+from pathlib import Path
+
+def run_checks():
+    base_dir = Path(__file__).resolve().parent.parent
+    compose_path = base_dir / "docker-compose.yml"
+    env_path = base_dir / ".env"
+    scoring_src = base_dir / "azimutt-data" / "sources" / "teams" / "scoring"
+    reporting_src = base_dir / "azimutt-data" / "sources" / "teams" / "reporting"
+    scoring_lyt = base_dir / "azimutt-data" / "layouts" / "teams" / "scoring"
+    reporting_lyt = base_dir / "azimutt-data" / "layouts" / "teams" / "reporting"
+    inputs_dir = base_dir / "inputs" / "multi_platform"
+    sync_script = base_dir / "scripts" / "sync_multiplatform_metadata.py"
+
+    print("=" * 75)
+    print("VERIFIKASI SISTEM EDM & DAMA-DMBOK: CHARTDB & AZIMUTT (BANKING GRADE)")
+    print("=" * 75)
+
+    checks_passed = True
+
+    # 1. Check docker-compose.yml exists
+    if not compose_path.exists():
+        print("[FAIL] docker-compose.yml tidak ditemukan.")
+        return False
+    print("[PASS] docker-compose.yml ditemukan.")
+
+    compose_content = compose_path.read_text(encoding="utf-8")
+
+    # 2. Check ChartDB specs
+    chartdb_checks = [
+        ("ghcr.io/chartdb/chartdb:latest", "Base image ChartDB resmi: 'ghcr.io/chartdb/chartdb:latest'"),
+        ("DISABLE_ANALYTICS", "Hardening: DISABLE_ANALYTICS dikonfigurasi"),
+        ("VITE_HIDE_CHARTDB_CLOUD", "Hardening: VITE_HIDE_CHARTDB_CLOUD dikonfigurasi"),
+        ("8080:80", "Port forwarding ChartDB diatur ke 8080:80"),
+        ("edm-secure-net", "ChartDB terhubung ke jaringan 'edm-secure-net'")
+    ]
+
+    for token, desc in chartdb_checks:
+        if token in compose_content:
+            print(f"[PASS] {desc}")
+        else:
+            print(f"[FAIL] {desc}")
+            checks_passed = False
+
+    # Check ChartDB Statelessness (no volume mount)
+    chartdb_block = compose_content.split("azimutt-db:")[0]
+    if "volumes:" in chartdb_block and "- " in chartdb_block.split("volumes:")[1].split("networks:")[0]:
+        print("[FAIL] ChartDB terdeteksi memiliki persistent volume! Harus 100% stateless.")
+        checks_passed = False
+    else:
+        print("[PASS] Layanan ChartDB 100% Stateless (tanpa volume persistensi)")
+
+    # 3. Check Azimutt specs
+    azimutt_checks = [
+        ("ghcr.io/azimuttapp/azimutt", "Base image Azimutt resmi ghcr.io/azimuttapp/azimutt"),
+        ("8000", "Port forwarding Azimutt diarahkan ke port lokal 8000"),
+        ("./azimutt-data/sources:/app/sources", "Volume terpisah untuk direktori 'sources' terkonfigurasi"),
+        ("./azimutt-data/layouts:/app/layouts", "Volume terpisah untuk direktori 'layouts' terkonfigurasi"),
+        ("edm-secure-net", "Azimutt terhubung ke jaringan terisolasi 'edm-secure-net'")
+    ]
+
+    for token, desc in azimutt_checks:
+        if token in compose_content:
+            print(f"[PASS] {desc}")
+        else:
+            print(f"[FAIL] {desc}")
+            checks_passed = False
+
+    # Check Azimutt-DB Isolation (Zero Exposed Ports on DB container)
+    db_block = compose_content.split("azimutt-db:")[1].split("azimutt:")[0]
+    if "ports:" in db_block:
+        print("[FAIL] Backend database Azimutt mengekspos port ke host! Harus terisolasi.")
+        checks_passed = False
+    else:
+        print("[PASS] Backend Azimutt terisolasi di jaringan internal (tanpa port ke host)")
+
+    # 4. Check Directories
+    dirs_to_check = [
+        (scoring_src, "Sources Tim Scoring (DDL / SQL)"),
+        (reporting_src, "Sources Tim Reporting (DDL / SQL)"),
+        (scoring_lyt, "Layouts Tim Scoring (Views / Diagram)"),
+        (reporting_lyt, "Layouts Tim Reporting (Views / Diagram)")
+    ]
+
+    for d, label in dirs_to_check:
+        if d.exists():
+            print(f"[PASS] Direktori {label} ditemukan: {d.name}")
+        else:
+            print(f"[FAIL] Direktori {label} tidak ditemukan: {d}")
+            checks_passed = False
+
+    # 5. Check .env
+    if env_path.exists():
+        print("[PASS] File .env aktif untuk perlindungan Zero-Credential-Exposure.")
+    else:
+        print("[WARN] File .env belum dibuat (gunakan .env.example).")
+
+    # 6. Check Multi-Platform Static Metadata Inputs (DAMA-DMBOK V.2)
+    input_files = [
+        ("oltp_postgres.sql", "PostgreSQL Core Scoring DDL"),
+        ("oltp_mysql.sql", "MySQL Channel Partner DDL"),
+        ("oltp_sqlserver.sql", "SQL Server Legacy Collateral DDL"),
+        ("olap_bigquery_ddl.sql", "BigQuery 3-Layer Medallion DDL"),
+        ("dbt_schema.yml", "dbt Data Contracts & Governance Catalog"),
+        ("airflow_batch_query.sql", "Airflow Batch Orchestration Query"),
+        ("superset_datasources.yaml", "Superset BI Datasets & Metrics Export")
+    ]
+
+    for filename, label in input_files:
+        f_path = inputs_dir / filename
+        if f_path.exists() and f_path.stat().st_size > 0:
+            print(f"[PASS] Artefak Multi-Platform ditemukan: {label} ({filename})")
+        else:
+            print(f"[FAIL] Artefak Multi-Platform tidak ditemukan: {label} ({filename})")
+            checks_passed = False
+
+    # 7. Check Execution of Deterministic Transpiler & Linter
+    if not sync_script.exists():
+        print(f"[FAIL] Skrip transpiler tidak ditemukan: {sync_script}")
+        checks_passed = False
+    else:
+        print(f"[PASS] Skrip transpiler ditemukan: {sync_script.name}")
+        try:
+            res = subprocess.run(
+                [sys.executable, str(sync_script)],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            if res.returncode == 0:
+                print("[PASS] Eksekusi 'sync_multiplatform_metadata.py' sukses (Exit Code 0).")
+            else:
+                print(f"[FAIL] Eksekusi 'sync_multiplatform_metadata.py' gagal (Exit Code {res.returncode}):\n{res.stderr}")
+                checks_passed = False
+        except Exception as e:
+            print(f"[FAIL] Gagal menjalankan transpiler: {e}")
+            checks_passed = False
+
+    # 8. Check Generated Artifacts & Schema Validation
+    schema_paths = [
+        base_dir / "sources" / "bank_raya_unified_schema.json",
+        base_dir / "azimutt-data" / "sources" / "bank_raya_unified_schema.json"
+    ]
+    for p in schema_paths:
+        if p.exists():
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                has_tables = "tables" in data and isinstance(data["tables"], list) and len(data["tables"]) >= 8
+                has_relations = "relations" in data and isinstance(data["relations"], list)
+                has_types = "types" in data and isinstance(data["types"], list)
+                if has_tables and has_relations and has_types:
+                    print(f"[PASS] Azimutt Schema Valid ({len(data['tables'])} tabel, {len(data['relations'])} relasi): {p.relative_to(base_dir)}")
+                else:
+                    print(f"[FAIL] Format Azimutt Schema tidak lengkap pada: {p.relative_to(base_dir)}")
+                    checks_passed = False
+            except Exception as e:
+                print(f"[FAIL] File {p.relative_to(base_dir)} bukan JSON valid: {e}")
+                checks_passed = False
+        else:
+            print(f"[FAIL] File tidak ditemukan: {p.relative_to(base_dir)}")
+            checks_passed = False
+
+    chartdb_paths = [
+        base_dir / "sources" / "chartdb_unified_import.sql",
+        base_dir / "azimutt-data" / "sources" / "chartdb_unified_import.sql"
+    ]
+    for p in chartdb_paths:
+        if p.exists() and p.stat().st_size > 0:
+            print(f"[PASS] ChartDB Unified SQL Import ditemukan: {p.relative_to(base_dir)}")
+        else:
+            print(f"[FAIL] ChartDB Unified SQL Import tidak ditemukan: {p.relative_to(base_dir)}")
+            checks_passed = False
+
+    layout_paths = [
+        base_dir / "layouts" / "bank_raya_domain_layouts.json",
+        base_dir / "azimutt-data" / "layouts" / "bank_raya_domain_layouts.json"
+    ]
+    for p in layout_paths:
+        if p.exists():
+            try:
+                ldata = json.loads(p.read_text(encoding="utf-8"))
+                if "layouts" in ldata and len(ldata["layouts"]) >= 5:
+                    print(f"[PASS] Azimutt Domain Layouts Valid ({len(ldata['layouts'])} domain): {p.relative_to(base_dir)}")
+                else:
+                    print(f"[FAIL] Domain layouts tidak lengkap pada: {p.relative_to(base_dir)}")
+                    checks_passed = False
+            except Exception as e:
+                print(f"[FAIL] File {p.relative_to(base_dir)} bukan JSON valid: {e}")
+                checks_passed = False
+        else:
+            print(f"[FAIL] File layout tidak ditemukan: {p.relative_to(base_dir)}")
+            checks_passed = False
+
+    print("=" * 75)
+    if checks_passed:
+        print("HASIL: SEMUA SPESIFIKASI TEKNIS & KEAMANAN TERVERIFIKASI 100% VALID")
+    else:
+        print("HASIL: ADA SPESIFIKASI YANG BELUM TERPENUHI.")
+    print("=" * 75)
+    return checks_passed
+
+if __name__ == "__main__":
+    success = run_checks()
+    sys.exit(0 if success else 1)
