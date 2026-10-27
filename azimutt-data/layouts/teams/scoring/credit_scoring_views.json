@@ -1,0 +1,19 @@
+{
+  "layout_name": "Executive Scoring & Risk Overview",
+  "team": "teams/scoring",
+  "version": "1.0.0",
+  "views": [
+    {
+      "table": "scoring.credit_applications",
+      "position": {"x": 120, "y": 80},
+      "color": "blue",
+      "collapsed": false
+    },
+    {
+      "table": "scoring.scorecard_rules",
+      "position": {"x": 520, "y": 80},
+      "color": "indigo",
+      "collapsed": false
+    }
+  ]
+}

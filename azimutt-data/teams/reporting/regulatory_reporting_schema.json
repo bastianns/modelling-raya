@@ -1,0 +1,42 @@
+{
+  "project": {
+    "name": "Team Reporting - Regulatory & Compliance Model",
+    "description": "Skema model data pelaporan regulasi perbankan tersegmen (SLIK, LBBU, LBU).",
+    "version": 1
+  },
+  "tables": [
+    {
+      "schema": "reporting",
+      "name": "monthly_loan_reports",
+      "columns": [
+        {"name": "report_id", "type": "BIGINT", "primaryKey": true},
+        {"name": "period_yyyymm", "type": "VARCHAR(6)"},
+        {"name": "account_number", "type": "VARCHAR(30)"},
+        {"name": "collectibility_status", "type": "CHAR(1)"},
+        {"name": "outstanding_balance", "type": "DECIMAL(18,2)"},
+        {"name": "provision_amount", "type": "DECIMAL(18,2)"}
+      ]
+    },
+    {
+      "schema": "reporting",
+      "name": "regulator_submissions",
+      "columns": [
+        {"name": "submission_id", "type": "UUID", "primaryKey": true},
+        {"name": "report_code", "type": "VARCHAR(20)"},
+        {"name": "submission_timestamp", "type": "TIMESTAMP"},
+        {"name": "acknowledgment_receipt", "type": "VARCHAR(100)"}
+      ]
+    }
+  ],
+  "relations": [],
+  "layouts": [
+    {
+      "name": "Default Reporting Layout",
+      "description": "Visualisasi relasi skema reporting regulasi",
+      "tables": [
+        {"id": "reporting.monthly_loan_reports", "position": {"left": 100, "top": 100}},
+        {"id": "reporting.regulator_submissions", "position": {"left": 500, "top": 100}}
+      ]
+    }
+  ]
+}

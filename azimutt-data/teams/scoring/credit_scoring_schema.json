@@ -1,0 +1,42 @@
+{
+  "project": {
+    "name": "Team Scoring - Risk & Credit Scoring Model",
+    "description": "Skema model data penilaian kredit perbankan tersegmen untuk Divisi Scoring.",
+    "version": 1
+  },
+  "tables": [
+    {
+      "schema": "scoring",
+      "name": "credit_applications",
+      "columns": [
+        {"name": "application_id", "type": "UUID", "primaryKey": true},
+        {"name": "customer_cif", "type": "VARCHAR(20)"},
+        {"name": "requested_amount", "type": "DECIMAL(18,2)"},
+        {"name": "risk_tier", "type": "VARCHAR(5)"},
+        {"name": "score_value", "type": "INT"},
+        {"name": "created_at", "type": "TIMESTAMP"}
+      ]
+    },
+    {
+      "schema": "scoring",
+      "name": "scorecard_rules",
+      "columns": [
+        {"name": "rule_id", "type": "INT", "primaryKey": true},
+        {"name": "rule_code", "type": "VARCHAR(50)"},
+        {"name": "weight_percentage", "type": "DECIMAL(5,2)"},
+        {"name": "is_active", "type": "BOOLEAN"}
+      ]
+    }
+  ],
+  "relations": [],
+  "layouts": [
+    {
+      "name": "Default Scoring Layout",
+      "description": "Visualisasi relasi skema scoring",
+      "tables": [
+        {"id": "scoring.credit_applications", "position": {"left": 100, "top": 100}},
+        {"id": "scoring.scorecard_rules", "position": {"left": 450, "top": 100}}
+      ]
+    }
+  ]
+}

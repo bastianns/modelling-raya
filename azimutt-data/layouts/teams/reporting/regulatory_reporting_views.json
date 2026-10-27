@@ -1,0 +1,19 @@
+{
+  "layout_name": "Compliance & Regulatory Submission View",
+  "team": "teams/reporting",
+  "version": "1.0.0",
+  "views": [
+    {
+      "table": "reporting.monthly_loan_reports",
+      "position": {"x": 100, "y": 100},
+      "color": "emerald",
+      "collapsed": false
+    },
+    {
+      "table": "reporting.regulator_submissions",
+      "position": {"x": 550, "y": 100},
+      "color": "teal",
+      "collapsed": false
+    }
+  ]
+}
