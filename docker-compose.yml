@@ -7,14 +7,19 @@
 services:
   # ----------------------------------------------------------------------------
   # 1. ChartDB Service: 100% Stateless ERD & Visual Diagramming
+  # Base upstream: ghcr.io/chartdb/chartdb
   # ----------------------------------------------------------------------------
   chartdb:
-    image: ghcr.io/chartdb/chartdb:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.chartdb
+    image: bankraya/chartdb-seeded:1
+    pull_policy: never
     container_name: chartdb-app
     restart: unless-stopped
     ports:
-      # Port forwarding 8080:80 (akses via http://localhost:8080)
-      - "8080:80"
+      # Port forwarding 127.0.0.1:8080:80 (localhost only, zero external exposure)
+      - "127.0.0.1:8080:80"
     environment:
       # Matikan telemetri dan tracking analitik eksternal
       - DISABLE_ANALYTICS=${CHARTDB_DISABLE_ANALYTICS:-true}
@@ -29,12 +34,12 @@ services:
   # 2. Azimutt Backend Database: Isolated PostgreSQL Metadata Storage
   # ----------------------------------------------------------------------------
   azimutt-db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
     container_name: azimutt-backend-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${AZIMUTT_DB_USER:-azimutt_bank_admin}
-      POSTGRES_PASSWORD: ${AZIMUTT_DB_PASSWORD:-azimutt_secure_password_bank_2026}
+      POSTGRES_PASSWORD: ${AZIMUTT_DB_PASSWORD:?Set di .env}
       POSTGRES_DB: ${AZIMUTT_DB_NAME:-azimutt_metadata}
     volumes:
       - azimutt-db-data:/var/lib/postgresql/data
@@ -51,27 +56,28 @@ services:
   # 3. Azimutt Service: Self-Hosted Architecture with Separated Storage Volumes
   # ----------------------------------------------------------------------------
   azimutt:
-    image: ghcr.io/azimuttapp/azimutt:main
+    image: ghcr.io/azimuttapp/azimutt@sha256:ecb0ca8b51ed397cf5e8500de748c3d1490cdf1f9773777be8f769f4b9f1ae99
     container_name: azimutt-app
     restart: unless-stopped
     depends_on:
       azimutt-db:
         condition: service_healthy
     ports:
-      # Port forwarding ke port lokal 8000 (akses via http://localhost:8000)
-      - "8000:4000"
+      # Port forwarding 127.0.0.1:8000:4000 (localhost only, zero external exposure)
+      - "127.0.0.1:8000:4000"
     environment:
       - PORT=4000
       - PHX_SERVER=true
       - PHX_HOST=${AZIMUTT_HOST:-localhost}
-      - DATABASE_URL=ecto://${AZIMUTT_DB_USER:-azimutt_bank_admin}:${AZIMUTT_DB_PASSWORD:-azimutt_secure_password_bank_2026}@azimutt-backend-db:5432/${AZIMUTT_DB_NAME:-azimutt_metadata}
-      - SECRET_KEY_BASE=${AZIMUTT_SECRET_KEY_BASE:-ajHLXv3RFH6JLQ6rDQ5_VKJez_IFFM7jBNjnh1hXrz15hHmZhEUSZdjXCXKRPZ3F7H5nzv62oMALuVXvPFAMEQ}
+      - DATABASE_URL=ecto://${AZIMUTT_DB_USER:-azimutt_bank_admin}:${AZIMUTT_DB_PASSWORD:?Set di .env}@azimutt-backend-db:5432/${AZIMUTT_DB_NAME:-azimutt_metadata}
+      - SECRET_KEY_BASE=${AZIMUTT_SECRET_KEY_BASE:?Set di .env}
       - AUTH_PASSWORD=true
       - FILE_STORAGE_ADAPTER=local
       - SENTRY=false
       - SKIP_ONBOARDING_FUNNEL=true
       - SKIP_EMAIL_CONFIRMATION=true
       - PUBLIC_SITE=false
+      - TZDATA_AUTO_UPDATE=disabled
     volumes:
       # Volume terpisah 1: Sumber skema (JSON / SQL DDL statis per tim)
       - ./azimutt-data/sources:/app/sources

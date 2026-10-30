@@ -13,6 +13,10 @@ __pycache__/
 # Runtime uploads & temporary data
 azimutt-data/uploads/
 
+# Browser persistent profile & screenshots (if run locally)
+*playwright_profile*/
+*screenshots*/
+
 # OS metadata
 .DS_Store
 Thumbs.db
