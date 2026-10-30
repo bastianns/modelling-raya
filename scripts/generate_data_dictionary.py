@@ -37,6 +37,19 @@ def generate_html_catalog():
             dbt_data = yaml.safe_load(f)
             dasg_domains = dbt_data.get("dasg_domains", [])
 
+    # Load dynamic domains from config/domains.yaml
+    domains_file = base_dir / "config" / "domains.yaml"
+    domains_config = {}
+    if domains_file.exists() and yaml:
+        with open(domains_file, "r", encoding="utf-8") as f:
+            domains_config = yaml.safe_load(f).get("domains", {})
+
+    domain_buttons_list = ['<button class="dasg-btn active" onclick="filterByDASG(\'all\', this)">Semua Domain</button>']
+    for d_key, d_info in domains_config.items():
+        d_name = d_info.get("name", d_key)
+        domain_buttons_list.append(f'<button class="dasg-btn" onclick="filterByDASG(\'{d_key.lower()}\', this)">{d_name}</button>')
+    domain_buttons_str = "\n            ".join(domain_buttons_list)
+
     tables = schema_data.get("tables", [])
     relations = schema_data.get("relations", [])
     types = schema_data.get("types", [])
@@ -251,37 +264,25 @@ def generate_html_catalog():
 
     <div class="header">
         <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
-        <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture</p>
+        <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG Architecture</p>
         <div class="meta-badges">
             <span class="badge">Generated: {now_str}</span>
             <span class="badge">Total Tabel: {len(tables)}</span>
             <span class="badge">Total Relasi: {len(relations)}</span>
-            <span class="badge">DASG Architecture: 11 Domains</span>
+            <span class="badge">Arsitektur Domain: {len(domains_config)} Domain</span>
         </div>
     </div>
 
     <div class="linter-box">
-        <div class="linter-title">🛡️ Shift-Left Linter Integrity Summary:</div>
-        <div>• <b>WARN-01 (Orphan Tables):</b> <code>legacy.collateral_registers</code> & <code>datamart.rpt_slik_ojk</code> terdeteksi sebagai tabel snapshot/register independen.</div>
-        <div>• <b>WARN-02 (Type Divergence):</b> <code>channel.loan_disbursements.application_id (VARCHAR(36))</code> mereferensikan <code>scoring.credit_applications.application_id (UUID)</code> lintas engine.</div>
-        <div>• <b>WARN-03 (PK & Contracts):</b> 8/8 tabel memiliki Primary Key valid; kontrak dbt <code>not_null</code> 100% tervalidasi.</div>
+        <div class="linter-title">🛡️ Shift-Left Linter & Governance Integrity Summary:</div>
+        <div>• <b>Enterprise Governance:</b> Sinkronisasi multi-platform metadata otomatis dengan validasi DAMA-DMBOK V.2.</div>
+        <div>• <b>Zero-Manual Automation:</b> Skema terpadu dikompilasi secara deterministik untuk ChartDB, Azimutt, dan Data Catalog.</div>
     </div>
 
     <div class="dasg-bar">
-        <div class="dasg-header">Bank Raya DASG 11-Domain Filter (Driven by dbt YAML metadata):</div>
+        <div class="dasg-header">Bank Raya DASG Domain Filter:</div>
         <div class="dasg-buttons">
-            <button class="dasg-btn active" onclick="filterByDASG('all', this)">All Domains (11)</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_01', this)">Domain 1: CIF</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_02', this)">Domain 2: Scoring</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_03', this)">Domain 3: Channels</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_04', this)">Domain 4: Collateral</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_05', this)">Domain 5: SLIK OJK</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_06', this)">Domain 6: Raw</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_07', this)">Domain 7: Staging</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_08', this)">Domain 8: Mart</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_09', this)">Domain 9: BI</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_10', this)">Domain 10: Risk</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_11', this)">Domain 11: Governance</button>
+            {domain_buttons_str}
         </div>
     </div>
 
@@ -310,10 +311,15 @@ def generate_html_catalog():
         comment = tbl.get("comment", "-")
         pk_cols = tbl.get("primaryKey", {}).get("columns", []) if tbl.get("primaryKey") else []
 
-        # Extract DASG domain from comment
-        dasg_match = re.search(r"DASG:\s*(domain_\d+)/([^\s\|\]]+)", comment)
-        dasg_domain = dasg_match.group(1) if dasg_match else "unassigned"
-        dasg_subdomain = dasg_match.group(2) if dasg_match else "general"
+        # Extract DASG domain from table or comment
+        domain_val = tbl.get("domain")
+        if domain_val:
+            dasg_domain = domain_val.lower()
+            dasg_subdomain = tbl.get("subdomain", "general").lower()
+        else:
+            dasg_match = re.search(r"DASG:\s*(domain_\d+|[A-Za-z0-9_]+)/([^\s\|\]]+)", comment)
+            dasg_domain = dasg_match.group(1).lower() if dasg_match else "unassigned"
+            dasg_subdomain = dasg_match.group(2).lower() if dasg_match else "general"
 
         html_content += f"""
         <div class="table-card" data-table="{schema}.{table_name}" data-domain="{dasg_domain}" data-subdomain="{dasg_subdomain}">
@@ -343,17 +349,21 @@ def generate_html_catalog():
             c_name = col.get("name")
             c_type = col.get("type")
             is_pk = c_name in pk_cols
+            is_pii = col.get("pii", False)
+            rules_str = col.get("data_rules", "")
             nullable_str = "NULL" if col.get("nullable", True) else "NOT NULL"
             c_comment = col.get("comment") or "-"
 
             pk_badge = '<span class="pk-icon" title="Primary Key">🔑 PK</span> ' if is_pk else ''
+            pii_badge = '<span class="pk-icon" style="color: #e11d48; margin-left: 6px;" title="Data Terproteksi PII">🔒 PII</span> ' if is_pii else ''
+            rules_info = f'<br><small style="color: #d97706;"><b>Rules:</b> {rules_str}</small>' if rules_str else ''
 
             html_content += f"""
                     <tr>
-                        <td><strong>{pk_badge}{c_name}</strong></td>
+                        <td><strong>{pk_badge}{pii_badge}{c_name}</strong></td>
                         <td><span class="type-pill">{c_type}</span></td>
                         <td><small style="color: var(--muted);">{nullable_str}</small></td>
-                        <td>{c_comment}</td>
+                        <td>{c_comment}{rules_info}</td>
                     </tr>
             """
 
@@ -400,7 +410,7 @@ def generate_html_catalog():
                 const cardDomain = card.getAttribute('data-domain');
 
                 const matchesQuery = text.includes(query);
-                const matchesDomain = (currentDomain === 'all' || cardDomain === currentDomain);
+                const matchesDomain = (currentDomain === 'all' || cardDomain.includes(currentDomain) || currentDomain.includes(cardDomain));
 
                 if (matchesQuery && matchesDomain) {
                     card.style.display = 'block';

@@ -1,0 +1,145 @@
+# ==============================================================================
+# Bank Raya Enterprise Data Architecture - DASG 11-Domain Taxonomy
+# Standard: DAMA-DMBOK V.2 & PT Bank Raya Indonesia Tbk Governance
+# ==============================================================================
+
+domains:
+  DEPOSIT:
+    name: "Deposit"
+    description: "Terkait Data Simpanan (Giro, Deposito, Tabungan Digital)"
+    color: "#059669"
+    subdomains:
+      - DIGISAV
+      - GIRO
+      - DEPOSITO
+      - SAVING
+
+  TRANSACTIONS:
+    name: "Transactions"
+    description: "Terkait Data Transaksi dan Pembayaran Digital"
+    color: "#d97706"
+    subdomains:
+      - SKN
+      - RTGS
+      - BIFAST
+      - TRANSFER_ONLINE
+      - TRANSFER_INTERNAL
+      - PULSA
+      - E_WALLET
+      - LISTRIK
+      - PLN
+      - TV_KABEL
+      - TELFON
+      - VA
+      - CREDIT_CARD
+      - QRIS_ACQUIRING
+      - QRIS_ISSUER
+      - TARIK_TUNAI
+      - SETOR_TUNAI
+      - RAYA_POIN
+
+  LENDING:
+    name: "Lending"
+    description: "Terkait data produk pinjaman retail, mikro, dan digital"
+    color: "#2563eb"
+    subdomains:
+      - DT
+      - FLEXI
+      - MAKSIMA
+      - CONNECT
+      - PERFORMA
+      - MIKRO
+      - RETAIL
+      - RAYA_PAYLATER
+
+  FACILITY:
+    name: "Facility"
+    description: "Data Fasilitas dan Plafon Pinjaman"
+    color: "#4f46e5"
+    subdomains:
+      - FCLTY_DT
+      - FCLTY_FLEXI
+      - FCLTY_MAKSIMA
+      - FCLTY_CONNECT
+      - FCLTY_PERFORMA
+      - FCLTY_MIKRO
+      - FCLTY_RETAIL
+      - FCLTY_RAYA_PAYLATER
+
+  SUPPORT_DATA:
+    name: "Support Data"
+    description: "Data Pendukung Operasional by Division / Desk"
+    color: "#475569"
+    subdomains:
+      - CSC
+      - DOP
+      - INF
+      - RCA
+      - SKAI
+      - ACC
+      - CMG
+      - HC
+      - EDM
+      - FAM
+
+  REPORTING:
+    name: "Reporting"
+    description: "Pelaporan Eksternal Regulator (OJK, BI, LPS, PPATK, dsb)"
+    color: "#7c3aed"
+    subdomains:
+      - OJK
+      - BI
+      - LPS
+      - APUPPT
+      - PPATK
+      - DJP
+      - BPS
+
+  PARTNERSHIP:
+    name: "Partnership"
+    description: "Kerja sama bisnis dengan pihak ketiga / mitra agregator"
+    color: "#0891b2"
+    subdomains:
+      - PNM
+      - BPJS
+
+  CORPORATE_STRATEGY:
+    name: "Corporate Strategy"
+    description: "Terkait inisiatif strategis dan eksekutif summary"
+    color: "#db2777"
+    subdomains:
+      - EXECUTIVE_SUMMARY
+
+  COMMUNITY_BRANCH:
+    name: "Community Branch"
+    description: "Data operasional kantor cabang komunitas berbagai daerah"
+    color: "#ea580c"
+    subdomains:
+      - CB_BANDUNG
+      - CB_BEKASI
+      - CB_MAKASSAR
+      - CB_MEDAN
+      - CB_SOLO
+      - CB_SURABAYA
+
+  CORE_BANKING:
+    name: "Core Banking"
+    description: "Sistem perbankan inti (Rayanet, Finacle, Parameter)"
+    color: "#dc2626"
+    subdomains:
+      - RAYANET
+      - FINACLE
+      - PARAMS
+
+  CUSTOMER:
+    name: "Customer"
+    description: "Data profil nasabah per lini produk"
+    color: "#0d9488"
+    subdomains:
+      - CUST_DT
+      - CUST_FLEXI
+      - CUST_MAKSIMA
+      - CUST_CONNECT
+      - CUST_PERFORMA
+      - CUST_MIKRO
+      - CUST_RETAIL

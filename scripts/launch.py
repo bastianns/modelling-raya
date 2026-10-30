@@ -61,6 +61,7 @@ def main():
     parser = argparse.ArgumentParser(description="Bank Raya Enterprise Data Architecture Launcher")
     parser.add_argument("--no-browser", action="store_true", help="Do not launch web browsers after initialization (for CI/CD)")
     parser.add_argument("--skip-docker", action="store_true", help="Skip docker compose up --build check")
+    parser.add_argument("--no-strict", action="store_true", help="Nonaktifkan validasi strict (melonggarkan)")
     args = parser.parse_args()
 
     base_dir = Path(__file__).resolve().parent.parent
@@ -73,11 +74,13 @@ def main():
     print("=" * 80)
 
     # -------------------------------------------------------------------------
-    # Step 1: Run Multi-Platform Transpiler & Shift-Left Linter
+    # Step 1: Load, Validate Changes & Compile SSoT Unified Schema
     # -------------------------------------------------------------------------
-    step1_cmd = [py_exec, str(base_dir / "scripts" / "sync_multiplatform_metadata.py")]
-    if not run_step(1, "Syncing Multi-Platform Metadata & Running Shift-Left Linter", step1_cmd, base_dir):
-        print("\n[ERROR] Step 1 failed. Aborting launch.")
+    step1_args = [py_exec, str(base_dir / "scripts" / "changes_loader.py")]
+    if getattr(args, "no_strict", False):
+        step1_args.append("--no-strict")
+    if not run_step(1, "Loading & Validating Changes and Compiling Schema", step1_args, base_dir):
+        print("\n[ERROR] Step 1 validation or schema compilation failed. Aborting BEFORE docker build.")
         return 1
 
     # -------------------------------------------------------------------------

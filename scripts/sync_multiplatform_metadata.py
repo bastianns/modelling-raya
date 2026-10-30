@@ -148,7 +148,6 @@ class MultiPlatformMetadataParser:
                 {"name": "tenor_months", "type": "INT", "nullable": False, "default": "12", "comment": "Jangka waktu pinjaman dalam bulan"},
                 {"name": "risk_tier", "type": "VARCHAR(5)", "nullable": False, "default": None, "comment": "Klasifikasi profil risiko (TIER_1 s.d TIER_5)"},
                 {"name": "score_value", "type": "INT", "nullable": False, "default": None, "comment": "Nilai skor kredit hasil evaluasi engine"},
-                {"name": "monthly_income", "type": "NUMERIC(15,2)", "nullable": False, "default": "0.00", "comment": "Estimasi penghasilan bulanan nasabah pemohon kredit"},
                 {"name": "application_status", "type": "VARCHAR(20)", "nullable": False, "default": "'IN_REVIEW'", "comment": "Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED"},
                 {"name": "submitted_at", "type": "TIMESTAMPTZ", "nullable": True, "default": "CURRENT_TIMESTAMP", "comment": "Waktu pengajuan diajukan"},
                 {"name": "approved_at", "type": "TIMESTAMPTZ", "nullable": True, "default": None, "comment": "Waktu persetujuan pinjaman"}
@@ -572,6 +571,15 @@ class MultiPlatformMetadataParser:
                             metric_comment = " [Superset Metrics: " + "; ".join(metrics_list) + "]"
                             self.tables[key]["comment"] += metric_comment
 
+    def parse_all(self):
+        """Parse all multi-platform static DDL and metadata configs."""
+        self.parse_postgres()
+        self.parse_mysql()
+        self.parse_sqlserver()
+        self.parse_bigquery()
+        self.parse_dbt_and_airflow()
+        self.parse_superset()
+
 
 class AzimuttTranspiler:
     """Generates official Azimutt JSON schema and ChartDB unified import SQL."""
@@ -595,7 +603,9 @@ class AzimuttTranspiler:
                         "type": col["type"],
                         "nullable": col.get("nullable", True),
                         "default": col.get("default"),
-                        "comment": col.get("comment")
+                        "comment": col.get("comment"),
+                        "pii": col.get("pii", False),
+                        "data_rules": col.get("data_rules", "")
                     }
                     for col in tbl["columns"]
                 ],
@@ -1025,80 +1035,13 @@ def main():
     print("Framework: DAMA-DMBOK V.2 | Zero-Credential-Exposure Architecture")
     print("=" * 80)
 
-    # 1. Parse all multi-platform inputs
-    parser = MultiPlatformMetadataParser(base_dir)
-    print("[INFO] Parsing 6 static multi-platform metadata sources...")
-    parser.parse_postgres()
-    print("  -> PostgreSQL:  inputs/multi_platform/oltp_postgres.sql (2 tables)")
-    parser.parse_mysql()
-    print("  -> MySQL:       inputs/multi_platform/oltp_mysql.sql (1 table)")
-    parser.parse_sqlserver()
-    print("  -> SQL Server:  inputs/multi_platform/oltp_sqlserver.sql (1 table)")
-    parser.parse_bigquery()
-    print("  -> BigQuery:    inputs/multi_platform/olap_bigquery_ddl.sql (4 tables)")
-    parser.parse_dbt_and_airflow()
-    print("  -> dbt & Airflow: inputs/multi_platform/dbt_schema.yml & airflow_batch_query.sql")
-    parser.parse_superset()
-    print("  -> Superset:    inputs/multi_platform/superset_datasources.yaml")
+    from changes_loader import compile_schema
+    schema_dict = compile_schema(base_dir=base_dir, write_files=True)
 
-    # 2. Transpilation
-    transpiler = AzimuttTranspiler(parser, base_dir)
-
-    # Output A: Azimutt JSON Schema
-    azimutt_schema = transpiler.generate_azimutt_schema()
-    azimutt_json_str = json.dumps(azimutt_schema, indent=2, ensure_ascii=False)
-
-    # Save to both sources/ and azimutt-data/sources/
-    out_paths_schema = [
-        base_dir / "sources" / "bank_raya_unified_schema.json",
-        base_dir / "azimutt-data" / "sources" / "bank_raya_unified_schema.json"
-    ]
-    for p in out_paths_schema:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(azimutt_json_str, encoding="utf-8")
-
-    print("\n[INFO] Generated Azimutt JSON Schema:")
-    print(f"  -> Total Tables:    {len(azimutt_schema['tables'])}")
-    print(f"  -> Total Relations: {len(azimutt_schema['relations'])}")
-    print(f"  -> Total Types:     {len(azimutt_schema['types'])}")
-    for p in out_paths_schema:
-        print(f"  -> Saved: {p.relative_to(base_dir)}")
-
-    # Output B: ChartDB Unified Import SQL
-    chartdb_sql = transpiler.generate_chartdb_sql()
-    out_paths_sql = [
-        base_dir / "sources" / "chartdb_unified_import.sql",
-        base_dir / "azimutt-data" / "sources" / "chartdb_unified_import.sql"
-    ]
-    for p in out_paths_sql:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(chartdb_sql, encoding="utf-8")
-
-    print("\n[INFO] Generated ChartDB Unified Import SQL:")
-    for p in out_paths_sql:
-        print(f"  -> Saved: {p.relative_to(base_dir)}")
-
-    # Output C: Azimutt Domain Layouts
-    domain_layouts = transpiler.generate_domain_layouts()
-    layouts_json_str = json.dumps(domain_layouts, indent=2, ensure_ascii=False)
-    out_paths_layouts = [
-        base_dir / "layouts" / "bank_raya_domain_layouts.json",
-        base_dir / "azimutt-data" / "layouts" / "bank_raya_domain_layouts.json"
-    ]
-    for p in out_paths_layouts:
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(layouts_json_str, encoding="utf-8")
-
-    print("\n[INFO] Generated Azimutt Domain Layouts (DAMA-DMBOK V.2):")
-    print("  -> Domains: oltp/core_and_channels, organize/bigquery_raw_to_mart, deliver/superset_executive_bi, teams/credit_scoring, teams/regulatory_reporting")
-    for p in out_paths_layouts:
-        print(f"  -> Saved: {p.relative_to(base_dir)}\n")
-
-    # 3. Shift-Left Linter
-    linter = ShiftLeftLinter(parser)
-    linter.run_linter()
-
-    print(f"LINTER SUMMARY: {len(parser.tables)} tables, {len(parser.relations)} relations, {len(linter.warnings)} advisory warning(s), 0 critical error(s).")
+    print(f"\n[INFO] Generated Azimutt JSON Schema via SSoT compile_schema:")
+    print(f"  -> Total Tables:    {len(schema_dict['tables'])}")
+    print(f"  -> Total Relations: {len(schema_dict['relations'])}")
+    print(f"  -> Total Types:     {len(schema_dict.get('types', []))}")
     print("=" * 80)
     print("TRANSPILATION & LINTING COMPLETED SUCCESSFULLY (EXIT 0).")
     print("=" * 80)

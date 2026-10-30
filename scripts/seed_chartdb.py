@@ -13,6 +13,7 @@ berbeda memiliki database IndexedDB terpisah.
 import os
 import sys
 import json
+import re
 import shutil
 import hashlib
 import argparse
@@ -94,52 +95,33 @@ def find_docker_bin() -> str:
     return "docker"
 
 def build_chartdb_payload(base_dir: Path) -> dict:
-    schema_file = base_dir / "sources" / "bank_raya_unified_schema.json"
     sql_file = base_dir / "sources" / "chartdb_unified_import.sql"
-
-    if not schema_file.exists():
-        raise FileNotFoundError(f"Schema file not found: {schema_file}")
-    
-    schema_data = json.loads(schema_file.read_text(encoding="utf-8"))
     sql_ddl = sql_file.read_text(encoding="utf-8") if sql_file.exists() else "-- Bank Raya Unified Import SQL"
 
     created_timestamp_num = 1730246400000
 
     diagram = {
         "id": DIAGRAM_ID,
-        "name": "Bank Raya Unified ERD (DAMA-DMBOK 11-Domain)",
+        "name": "Bank Raya Unified ERD",
         "databaseType": "postgresql",
         "databaseEdition": None
     }
 
-    # Grid coordinates and domain colors for tables (3-column layout)
-    coords_and_colors = {
-        ("scoring", "scorecard_rules"): (60, 60, "#4f46e5"),
-        ("scoring", "credit_applications"): (60, 440, "#2563eb"),
-        ("scoring", "fraud_audit_events"): (60, 880, "#1d4ed8"),
-        ("channel", "loan_disbursements"): (60, 1260, "#d97706"),
-        ("legacy", "collateral_registers"): (480, 60, "#dc2626"),
-        ("dataraw", "raw_applications"): (480, 480, "#475569"),
-        ("datastaging", "stg_applications"): (480, 860, "#0d9488"),
-        ("datamart", "fct_credit_scoring"): (920, 200, "#059669"),
-        ("datamart", "rpt_slik_ojk"): (920, 640, "#7c3aed"),
-    }
+    # Load SSoT compiled schema and layout from compile_schema
+    from changes_loader import compile_schema
+    compiled_data = compile_schema(base_dir=base_dir, write_files=False)
+    layout_map = compiled_data.get("layout_map", {})
 
     db_tables = []
-    unmapped_count = 0
-    for tbl_idx, tbl in enumerate(schema_data.get("tables", [])):
+    for tbl_idx, tbl in enumerate(compiled_data.get("tables", [])):
         s_name = tbl["schema"]
         t_name = tbl["name"]
-        key = (s_name, t_name)
-        if key in coords_and_colors:
-            x, y, color = coords_and_colors[key]
-        else:
-            col = unmapped_count // 3
-            row = unmapped_count % 3
-            x = 1360 + (col * 400)
-            y = 60 + (row * 380)
-            color = "#0284c7"
-            unmapped_count += 1
+        fqn = f"{s_name}.{t_name}"
+
+        pos_info = layout_map.get(fqn, {"x": 1360, "y": 60, "color": "#0284c7"})
+        x = pos_info["x"]
+        y = pos_info["y"]
+        color = pos_info["color"]
 
         table_id = f"tbl_{s_name}_{t_name}"
 
@@ -212,7 +194,7 @@ def build_chartdb_payload(base_dir: Path) -> dict:
         })
 
     db_relationships = []
-    for rel in schema_data.get("relations", []):
+    for rel in compiled_data.get("relations", []):
         src = rel["src"]
         ref = rel["ref"]
         rel_id = f"rel_{rel['name']}"
@@ -258,6 +240,12 @@ def generate_autoload_html(payload: dict) -> str:
     """Generate standalone autoload.html that writes to ChartDB Dexie IndexedDB (v130) and redirects."""
     payload_json = json.dumps(payload, ensure_ascii=False)
     
+    # Security assertion: ensure no private IPv4 or internal hosts are leaked into payload
+    raw_payload_str = json.dumps(payload)
+    internal_ip_match = re.search(r"\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b", raw_payload_str)
+    if internal_ip_match:
+        raise ValueError(f"[SECURITY FAIL] Alamat IPv4 internal terdeteksi dalam payload ChartDB: {internal_ip_match.group(0)}")
+
     html = f"""<!DOCTYPE html>
 <html lang="id">
 <head>

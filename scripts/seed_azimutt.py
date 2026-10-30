@@ -87,8 +87,13 @@ def build_azimutt_project_json(base_dir: Path) -> tuple[dict, dict]:
                 col_dict["nullable"] = False
             if c.get("default") is not None:
                 col_dict["default"] = str(c["default"])
-            if c.get("comment"):
-                col_dict["comment"] = {"text": str(c["comment"])}
+            comment_text = str(c.get("comment", "") or "")
+            if c.get("pii"):
+                comment_text += " [PII: Terproteksi]"
+            if c.get("data_rules"):
+                comment_text += f" [Rules: {c['data_rules']}]"
+            if comment_text.strip():
+                col_dict["comment"] = {"text": comment_text.strip()}
             cols.append(col_dict)
 
         table_col_map[full_id] = col_names

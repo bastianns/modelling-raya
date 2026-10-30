@@ -1,0 +1,52 @@
+# ==============================================================================
+# Bank Raya Visual ERD Layout Overrides (ChartDB Canvas Coordinates)
+# Mempertahankan letak presisi 9 tabel baseline agar layout tidak bergeser.
+# Tabel baru yang tidak terdaftar di sini akan diatur otomatis (kolom per domain,
+# baris per tabel, tinggi proporsional jumlah kolom, tanpa overlap).
+# ==============================================================================
+
+overrides:
+  scoring.scorecard_rules:
+    x: 60
+    y: 60
+    color: "#4f46e5"
+
+  scoring.credit_applications:
+    x: 60
+    y: 440
+    color: "#2563eb"
+
+  scoring.fraud_audit_events:
+    x: 60
+    y: 880
+    color: "#1d4ed8"
+
+  channel.loan_disbursements:
+    x: 60
+    y: 1260
+    color: "#d97706"
+
+  legacy.collateral_registers:
+    x: 480
+    y: 60
+    color: "#dc2626"
+
+  dataraw.raw_applications:
+    x: 480
+    y: 480
+    color: "#475569"
+
+  datastaging.stg_applications:
+    x: 480
+    y: 860
+    color: "#0d9488"
+
+  datamart.fct_credit_scoring:
+    x: 920
+    y: 200
+    color: "#059669"
+
+  datamart.rpt_slik_ojk:
+    x: 920
+    y: 640
+    color: "#7c3aed"
