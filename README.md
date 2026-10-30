@@ -199,6 +199,34 @@ Cukup jalankan satu perintah ini, seluruh kontainer, transpiler, seeding databas
 ```
 
 ### 2. Menjalankan Komponen Individual (Opsional)
+* **Sinkronisasi UI Resmi ChartDB via Playwright (`scripts/sync_chartdb.py`)**:
+  ```powershell
+  # Mode Headed (Default GUI Terlihat & Verifikasi 9 Tabel + Auto Arrange)
+  .\venv\Scripts\python.exe scripts\sync_chartdb.py
+
+  # Mode Headed & Tetap Buka Jendela Browser untuk Inspeksi Visual Langsung
+  .\venv\Scripts\python.exe scripts\sync_chartdb.py --keep-open
+
+  # Mode Headless (Otomasi Latar Belakang & Audit Terotomasi)
+  .\venv\Scripts\python.exe scripts\sync_chartdb.py --headless
+
+  # Menentukan Direktori Profil Browser Persisten Kustom (Luar Repo)
+  .\venv\Scripts\python.exe scripts\sync_chartdb.py --user-data-dir "$env:LOCALAPPDATA\chartdb_playwright_profile"
+  ```
+  > [!NOTE]
+  > **Manajemen Profil Browser Playwright**: ChartDB adalah aplikasi *client-side* murni yang menyimpan diagram di IndexedDB browser lokal (Dexie.js). Profil persisten disimpan di luar repo pada `$env:LOCALAPPDATA\chartdb_playwright_profile`. Untuk melihat kanvas langsung di jendela browser yang sama, jalankan tanpa `--headless` atau tambahkan flag `--keep-open`.
+
+* **Langkah Impor Manual ChartDB Resmi (Tanpa Skrip Otomasi)**:
+  Jika ingin melakukan impor mandiri melalui antarmuka resmi ChartDB di browser Chrome Anda sendiri:
+  1. Buka [http://localhost:8080](http://localhost:8080) di browser Chrome.
+  2. Pada modal awal *"What is your Database?"*, klik ikon **PostgreSQL** (lalu klik *Continue* jika diminta).
+  3. Pada modal *"Import your Database"*, klik tab **SQL Script**.
+  4. Salin seluruh isi file [`sources/chartdb_unified_import.sql`](file:///D:/modelling-raya/sources/chartdb_unified_import.sql) ke clipboard.
+  5. Klik editor Monaco input (kotak input tanpa teks awalan `pg_dump`) dan tempel (`Ctrl + V`).
+  6. Klik tombol **Import**. Kanvas akan langsung memuat tabel Bank Raya.
+  7. Pada bilah sisi kiri (*sidebar*), klik ikon mata (*eye*) pada grup skema (`scoring`, `datamart`, `legacy`, `datastaging`, `dataraw`) agar seluruh 9 tabel tampil di kanvas.
+  8. Klik tombol toolbar **Auto Arrange** (ikon grid) lalu klik **Auto Arrange** untuk merapikan posisi tabel secara otomatis tanpa tumpang-tindih.
+
 * **Transpiler & Shift-Left Linter (SSoT)**:
   ```powershell
   .\venv\Scripts\python.exe scripts\sync_multiplatform_metadata.py

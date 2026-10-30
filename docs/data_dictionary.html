@@ -191,9 +191,9 @@
         <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
         <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture</p>
         <div class="meta-badges">
-            <span class="badge">Generated: 2026-10-27 16:19:19</span>
-            <span class="badge">Total Tabel: 8</span>
-            <span class="badge">Total Relasi: 4</span>
+            <span class="badge">Generated: 2026-10-30 10:58:54</span>
+            <span class="badge">Total Tabel: 9</span>
+            <span class="badge">Total Relasi: 5</span>
             <span class="badge">DASG Architecture: 11 Domains</span>
         </div>
     </div>
@@ -413,6 +413,21 @@ erDiagram
     scoring_credit_applications {
         TIMESTAMPTZ approved_at
     }
+    scoring_fraud_audit_events {
+        UUID event_id
+    }
+    scoring_fraud_audit_events {
+        UUID application_id
+    }
+    scoring_fraud_audit_events {
+        DECIMAL_5_2_ fraud_risk_score
+    }
+    scoring_fraud_audit_events {
+        VARCHAR_100_ detection_rule
+    }
+    scoring_fraud_audit_events {
+        TIMESTAMP flagged_at
+    }
     scoring_scorecard_rules {
         SERIAL rule_id
     }
@@ -438,6 +453,7 @@ erDiagram
         TIMESTAMPTZ updated_at
     }
     scoring_credit_applications }o--|| scoring_scorecard_rules : "fk_credit_app_scorecard"
+    scoring_fraud_audit_events }o--|| scoring_credit_applications : "fk_fraud_audit_events_application_id"
     channel_loan_disbursements }o--|| scoring_credit_applications : "fk_disbursement_scoring_app"
     datastaging_stg_applications }o--|| dataraw_raw_applications : "fk_stg_raw_applications"
     datamart_fct_credit_scoring }o--|| datastaging_stg_applications : "fk_fct_stg_applications"
@@ -1035,6 +1051,67 @@ erDiagram
                         <td><span class="type-pill">TIMESTAMPTZ</span></td>
                         <td><small style="color: var(--muted);">NULL</small></td>
                         <td>Waktu persetujuan pinjaman</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="table-card" data-table="scoring.fraud_audit_events" data-domain="domain_02" data-subdomain="subdomain_02_2">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">scoring.fraud_audit_events</div>
+                    <div class="table-desc">Tabel penambahan dinamis scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit</div>
+                </div>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: domain_02 / subdomain_02_2</span>
+                    <span class="table-badge">scoring</span>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> event_id</strong></td>
+                        <td><span class="type-pill">UUID</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Primary key identifier event audit fraud</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>application_id</strong></td>
+                        <td><span class="type-pill">UUID</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Foreign key referensi ke scoring.credit_applications</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>fraud_risk_score</strong></td>
+                        <td><span class="type-pill">DECIMAL(5,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Skor risiko kecurangan hasil kalkulasi model anomali</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>detection_rule</strong></td>
+                        <td><span class="type-pill">VARCHAR(100)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Aturan atau model deteksi yang menandai event</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>flagged_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Waktu deteksi event anomali kecurangan dicatat</td>
                     </tr>
             
                 </tbody>
