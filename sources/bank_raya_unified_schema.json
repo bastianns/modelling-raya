@@ -567,6 +567,58 @@
     },
     {
       "schema": "scoring",
+      "table": "fraud_audit_events",
+      "name": "fraud_audit_events",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "UUID",
+          "nullable": false,
+          "default": "gen_random_uuid()",
+          "comment": "Primary key identifier event audit fraud"
+        },
+        {
+          "name": "application_id",
+          "type": "UUID",
+          "nullable": false,
+          "default": null,
+          "comment": "Foreign key referensi ke scoring.credit_applications"
+        },
+        {
+          "name": "fraud_risk_score",
+          "type": "DECIMAL(5,2)",
+          "nullable": false,
+          "default": null,
+          "comment": "Skor risiko kecurangan hasil kalkulasi model anomali"
+        },
+        {
+          "name": "detection_rule",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "default": null,
+          "comment": "Aturan atau model deteksi yang menandai event"
+        },
+        {
+          "name": "flagged_at",
+          "type": "TIMESTAMP",
+          "nullable": false,
+          "default": "CURRENT_TIMESTAMP",
+          "comment": "Waktu deteksi event anomali kecurangan dicatat"
+        }
+      ],
+      "primaryKey": {
+        "name": "pk_fraud_audit_events",
+        "columns": [
+          "event_id"
+        ]
+      },
+      "uniques": [],
+      "indexes": [],
+      "checks": [],
+      "comment": "Tabel penambahan dinamis scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit"
+    },
+    {
+      "schema": "scoring",
       "table": "scorecard_rules",
       "name": "scorecard_rules",
       "columns": [
@@ -661,6 +713,19 @@
       }
     },
     {
+      "name": "fk_fraud_audit_events_application_id",
+      "src": {
+        "schema": "scoring",
+        "table": "fraud_audit_events",
+        "column": "application_id"
+      },
+      "ref": {
+        "schema": "scoring",
+        "table": "credit_applications",
+        "column": "application_id"
+      }
+    },
+    {
       "name": "fk_disbursement_scoring_app",
       "src": {
         "schema": "channel",
@@ -704,11 +769,9 @@
     {
       "schema": "datamart",
       "name": "scoring_details",
-      "values": [
-        "model_version STRING",
-        "probability_of_default NUMERIC",
-        "score_cutoff INT64"
-      ]
+      "value": {
+        "definition": "STRUCT<model_version STRING, probability_of_default NUMERIC, score_cutoff INT64>"
+      }
     }
   ]
 }

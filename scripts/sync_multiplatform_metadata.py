@@ -156,6 +156,111 @@ class MultiPlatformMetadataParser:
             "ref": {"schema": "scoring", "table": "scorecard_rules", "column": "rule_id"}
         })
 
+        # 3. Dynamic Parser: automatically detects any additional CREATE TABLE in oltp_postgres.sql
+        table_matches = re.finditer(
+            r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:(\w+)\.)?(\w+)\s*\((.*?)\);",
+            content,
+            re.DOTALL | re.IGNORECASE
+        )
+        for tm in table_matches:
+            schema_name = tm.group(1) or "scoring"
+            tbl_name = tm.group(2)
+            if (schema_name, tbl_name) in self.tables:
+                continue
+
+            body = tm.group(3)
+            parsed_cols = []
+            pk_cols = []
+            uniques = []
+
+            items = []
+            curr = []
+            depth = 0
+            for char in body:
+                if char == '(':
+                    depth += 1
+                elif char == ')':
+                    depth -= 1
+                elif char == ',' and depth == 0:
+                    items.append("".join(curr).strip())
+                    curr = []
+                    continue
+                curr.append(char)
+            if curr:
+                items.append("".join(curr).strip())
+
+            for item in items:
+                line = " ".join(item.split()).strip()
+                if not line:
+                    continue
+
+                if re.match(r"^CONSTRAINT\s+(\w+)\s+PRIMARY\s+KEY\s*\((.*?)\)", line, re.I):
+                    m = re.match(r"^CONSTRAINT\s+(\w+)\s+PRIMARY\s+KEY\s*\((.*?)\)", line, re.I)
+                    pk_cols = [c.strip() for c in m.group(2).split(",")]
+                    continue
+                elif re.match(r"^PRIMARY\s+KEY\s*\((.*?)\)", line, re.I):
+                    m = re.match(r"^PRIMARY\s+KEY\s*\((.*?)\)", line, re.I)
+                    pk_cols = [c.strip() for c in m.group(1).split(",")]
+                    continue
+                elif re.match(r"^(?:CONSTRAINT\s+(\w+)\s+)?FOREIGN\s+KEY\s*\((.*?)\)\s+REFERENCES\s+(?:(\w+)\.)?(\w+)\s*\((.*?)\)", line, re.I):
+                    m = re.match(r"^(?:CONSTRAINT\s+(\w+)\s+)?FOREIGN\s+KEY\s*\((.*?)\)\s+REFERENCES\s+(?:(\w+)\.)?(\w+)\s*\((.*?)\)", line, re.I)
+                    c_name = m.group(1) or f"fk_{tbl_name}_{m.group(2).strip()}"
+                    src_col = m.group(2).strip()
+                    ref_schema = m.group(3) or schema_name
+                    ref_tbl = m.group(4).strip()
+                    ref_col = m.group(5).strip()
+                    self.relations.append({
+                        "name": c_name,
+                        "src": {"schema": schema_name, "table": tbl_name, "column": src_col},
+                        "ref": {"schema": ref_schema, "table": ref_tbl, "column": ref_col}
+                    })
+                    continue
+
+                tokens = line.split()
+                if len(tokens) >= 2:
+                    col_name = tokens[0]
+                    col_type = tokens[1]
+                    nullable = "NOT NULL" not in line.upper()
+                    if "PRIMARY KEY" in line.upper():
+                        nullable = False
+                        pk_cols.append(col_name)
+
+                    ref_m = re.search(r"REFERENCES\s+(?:(\w+)\.)?(\w+)\s*\((.*?)\)", line, re.I)
+                    if ref_m:
+                        ref_sch = ref_m.group(1) or schema_name
+                        ref_t = ref_m.group(2)
+                        ref_c = ref_m.group(3)
+                        self.relations.append({
+                            "name": f"fk_{tbl_name}_{col_name}",
+                            "src": {"schema": schema_name, "table": tbl_name, "column": col_name},
+                            "ref": {"schema": ref_sch, "table": ref_t, "column": ref_c}
+                        })
+
+                    default_val = None
+                    def_m = re.search(r"DEFAULT\s+([^,]+?)(?:\s+NOT\s+NULL|\s+REFERENCES|$)", line, re.I)
+                    if def_m:
+                        default_val = def_m.group(1).strip()
+
+                    parsed_cols.append({
+                        "name": col_name,
+                        "type": col_type,
+                        "nullable": nullable,
+                        "default": default_val,
+                        "comment": f"Field {col_name} pada {schema_name}.{tbl_name}"
+                    })
+
+            self.register_or_merge_table(schema_name, tbl_name, {
+                "schema": schema_name,
+                "name": tbl_name,
+                "platform": "PostgreSQL 16 (Core OLTP)",
+                "columns": parsed_cols,
+                "primaryKey": {"name": f"pk_{tbl_name}", "columns": pk_cols} if pk_cols else None,
+                "uniques": uniques,
+                "indexes": [],
+                "checks": [],
+                "comment": f"Tabel penambahan dinamis {schema_name}.{tbl_name}"
+            }, "PostgreSQL OLTP")
+
     def parse_mysql(self):
         mysql_file = self.inputs_dir / "oltp_mysql.sql"
         if not mysql_file.exists():
@@ -303,7 +408,9 @@ class MultiPlatformMetadataParser:
         self.types.append({
             "schema": "datamart",
             "name": "scoring_details",
-            "values": ["model_version STRING", "probability_of_default NUMERIC", "score_cutoff INT64"]
+            "value": {
+                "definition": "STRUCT<model_version STRING, probability_of_default NUMERIC, score_cutoff INT64>"
+            }
         })
 
         # 4. Data Mart: rpt_slik_ojk
@@ -493,26 +600,39 @@ class AzimuttTranspiler:
             "-- Architecture: DAMA-DMBOK V.2 Integrated Data Architecture",
             "-- Target: ChartDB Stateless Diagramming Engine (:8080)",
             "-- Zero-Credential-Exposure: Sanitized Schema Definitions",
-            "-- ==============================================================================\n",
-            "CREATE SCHEMA IF NOT EXISTS scoring;",
-            "CREATE SCHEMA IF NOT EXISTS channel;",
-            "CREATE SCHEMA IF NOT EXISTS legacy;",
-            "CREATE SCHEMA IF NOT EXISTS dataraw;",
-            "CREATE SCHEMA IF NOT EXISTS datastaging;",
-            "CREATE SCHEMA IF NOT EXISTS datamart;\n"
+            "-- ==============================================================================\n"
         ]
 
-        # Order tables so referenced tables are created before referencing tables
-        creation_order = [
-            ("scoring", "scorecard_rules"),
-            ("scoring", "credit_applications"),
-            ("channel", "loan_disbursements"),
-            ("legacy", "collateral_registers"),
-            ("dataraw", "raw_applications"),
-            ("datastaging", "stg_applications"),
-            ("datamart", "fct_credit_scoring"),
-            ("datamart", "rpt_slik_ojk")
-        ]
+        # Dynamically declare all schemas present in parsed tables
+        schemas = sorted({s for s, _ in self.parser.tables.keys()})
+        for s in schemas:
+            lines.append(f"CREATE SCHEMA IF NOT EXISTS {s};")
+        lines.append("")
+
+        # Dynamic topological sort based on FK relationships:
+        # A referenced table (dependency) must be created before a referencing table.
+        # Tables without FK follow alphabetical order.
+        all_tables = set(self.parser.tables.keys())
+        deps = {k: set() for k in all_tables}
+        for rel in self.parser.relations:
+            src_key = (rel["src"]["schema"].lower(), rel["src"]["table"].lower())
+            ref_key = (rel["ref"]["schema"].lower(), rel["ref"]["table"].lower())
+            if src_key in all_tables and ref_key in all_tables and src_key != ref_key:
+                deps[src_key].add(ref_key)
+
+        creation_order = []
+        remaining = set(all_tables)
+        while remaining:
+            # Candidates whose prerequisite dependencies are already satisfied
+            ready = [t for t in remaining if deps[t].issubset(set(creation_order))]
+            if not ready:
+                # Fallback in case of circular dependency
+                ready = list(remaining)
+            # Tables without FK (or with 0 unresolved dependencies) prioritized and sorted alphabetically
+            ready.sort(key=lambda x: (len(deps[x]) > 0, f"{x[0]}.{x[1]}"))
+            next_tbl = ready[0]
+            creation_order.append(next_tbl)
+            remaining.remove(next_tbl)
 
         for schema, name in creation_order:
             tbl = self.parser.tables.get((schema, name))
@@ -583,52 +703,69 @@ class AzimuttTranspiler:
 
     def generate_domain_layouts(self) -> dict:
         """Generates Azimutt folder-based partial layouts according to DAMA-DMBOK domains."""
+        def make_table_props(tbl_id: str, left: int, top: int, color: str) -> dict:
+            parts = tbl_id.split(".")
+            s = parts[0] if len(parts) > 1 else ""
+            t = parts[1] if len(parts) > 1 else parts[0]
+            tbl = self.parser.tables.get((s, t))
+            cols = [c["name"] for c in tbl.get("columns", [])] if tbl else []
+            height = max(120, 36 + 22 * len(cols))
+            return {
+                "id": tbl_id,
+                "position": {"left": left, "top": top},
+                "size": {"width": 260, "height": height},
+                "color": color,
+                "columns": cols
+            }
+
         layouts = {
             "oltp/core_and_channels": {
                 "name": "OLTP - Core Risk & Channels",
                 "description": "Sistem transaksional operasional (PostgreSQL Scoring, MySQL Channel, SQL Server Legacy)",
                 "tables": [
-                    {"id": "scoring.credit_applications", "position": {"left": 100, "top": 100}, "color": "blue"},
-                    {"id": "scoring.scorecard_rules", "position": {"left": 500, "top": 100}, "color": "indigo"},
-                    {"id": "channel.loan_disbursements", "position": {"left": 100, "top": 450}, "color": "amber"},
-                    {"id": "legacy.collateral_registers", "position": {"left": 500, "top": 450}, "color": "red"}
+                    make_table_props("scoring.credit_applications", 100, 100, "blue"),
+                    make_table_props("scoring.scorecard_rules", 420, 100, "indigo"),
+                    make_table_props("scoring.fraud_audit_events", 740, 100, "rose"),
+                    make_table_props("channel.loan_disbursements", 100, 480, "amber"),
+                    make_table_props("legacy.collateral_registers", 500, 480, "red")
                 ]
             },
             "organize/bigquery_raw_to_mart": {
                 "name": "Organize - BigQuery Medallion Architecture",
                 "description": "Lapisan data warehouse BigQuery (Raw -> Staging -> Mart) diorkestrasi Airflow & dbt",
                 "tables": [
-                    {"id": "dataraw.raw_applications", "position": {"left": 100, "top": 150}, "color": "gray"},
-                    {"id": "datastaging.stg_applications", "position": {"left": 450, "top": 150}, "color": "teal"},
-                    {"id": "datamart.fct_credit_scoring", "position": {"left": 800, "top": 80}, "color": "emerald"},
-                    {"id": "datamart.rpt_slik_ojk", "position": {"left": 800, "top": 380}, "color": "purple"}
+                    make_table_props("dataraw.raw_applications", 100, 150, "gray"),
+                    make_table_props("datastaging.stg_applications", 450, 150, "teal"),
+                    make_table_props("datamart.fct_credit_scoring", 800, 80, "emerald"),
+                    make_table_props("datamart.rpt_slik_ojk", 800, 380, "purple")
                 ]
             },
             "deliver/superset_executive_bi": {
                 "name": "Deliver - Superset BI & Analytics Datasets",
                 "description": "Dataset Data Mart yang diekspos ke Apache Superset untuk metrik eksekutif dan kepatuhan",
                 "tables": [
-                    {"id": "datamart.fct_credit_scoring", "position": {"left": 150, "top": 120}, "color": "emerald"},
-                    {"id": "datamart.rpt_slik_ojk", "position": {"left": 600, "top": 120}, "color": "purple"}
+                    make_table_props("datamart.fct_credit_scoring", 150, 120, "emerald"),
+                    make_table_props("datamart.rpt_slik_ojk", 600, 120, "purple")
                 ]
             },
             "teams/credit_scoring": {
                 "name": "Team Domain: Credit Scoring & Risk",
                 "description": "End-to-end lineage dari pengajuan aplikasi, pencairan mitra, hingga mart scoring",
                 "tables": [
-                    {"id": "scoring.credit_applications", "position": {"left": 100, "top": 100}, "color": "blue"},
-                    {"id": "scoring.scorecard_rules", "position": {"left": 450, "top": 100}, "color": "indigo"},
-                    {"id": "channel.loan_disbursements", "position": {"left": 100, "top": 400}, "color": "amber"},
-                    {"id": "datastaging.stg_applications", "position": {"left": 450, "top": 400}, "color": "teal"},
-                    {"id": "datamart.fct_credit_scoring", "position": {"left": 800, "top": 250}, "color": "emerald"}
+                    make_table_props("scoring.credit_applications", 100, 100, "blue"),
+                    make_table_props("scoring.scorecard_rules", 420, 100, "indigo"),
+                    make_table_props("scoring.fraud_audit_events", 740, 100, "rose"),
+                    make_table_props("channel.loan_disbursements", 100, 460, "amber"),
+                    make_table_props("datastaging.stg_applications", 450, 460, "teal"),
+                    make_table_props("datamart.fct_credit_scoring", 800, 300, "emerald")
                 ]
             },
             "teams/regulatory_reporting": {
                 "name": "Team Domain: Regulatory & Compliance",
                 "description": "Pemodelan pelaporan debitur dan agunan untuk kepatuhan SLIK OJK",
                 "tables": [
-                    {"id": "legacy.collateral_registers", "position": {"left": 150, "top": 150}, "color": "red"},
-                    {"id": "datamart.rpt_slik_ojk", "position": {"left": 600, "top": 150}, "color": "purple"}
+                    make_table_props("legacy.collateral_registers", 150, 150, "red"),
+                    make_table_props("datamart.rpt_slik_ojk", 600, 150, "purple")
                 ]
             }
         }
@@ -645,11 +782,10 @@ class AzimuttTranspiler:
             matching_tables = []
             for (s_name, t_name), tbl in self.parser.tables.items():
                 if tbl.get("dasg_domain") == dom_id:
-                    matching_tables.append({
-                        "id": f"{s_name}.{t_name}",
-                        "position": {"left": 100 + len(matching_tables) * 350, "top": 100},
-                        "color": dom_color
-                    })
+                    tbl_id = f"{s_name}.{t_name}"
+                    left = 100 + len(matching_tables) * 320
+                    top = 100
+                    matching_tables.append(make_table_props(tbl_id, left, top, dom_color))
 
             layouts[f"dasg/{dom_id}"] = {
                 "name": f"DASG - {dom_name}",
@@ -664,11 +800,10 @@ class AzimuttTranspiler:
                 sub_tables = []
                 for (s_name, t_name), tbl in self.parser.tables.items():
                     if tbl.get("dasg_subdomain") == sub_id:
-                        sub_tables.append({
-                            "id": f"{s_name}.{t_name}",
-                            "position": {"left": 100 + len(sub_tables) * 350, "top": 100},
-                            "color": dom_color
-                        })
+                        tbl_id = f"{s_name}.{t_name}"
+                        left = 100 + len(sub_tables) * 320
+                        top = 100
+                        sub_tables.append(make_table_props(tbl_id, left, top, dom_color))
                 layouts[f"dasg/{dom_id}/{sub_id}"] = {
                     "name": f"DASG - {sub_name}",
                     "description": f"Subdomain view for {sub_name} under {dom_name}",
@@ -737,7 +872,7 @@ class ShiftLeftLinter:
             for item in warn_03_list:
                 print(f"  * {item[10:]}")
         else:
-            print("  * All 8 tables have defined Primary Keys.")
+            print(f"  * All {len(self.parser.tables)} tables have defined Primary Keys.")
             print("  * All dbt not_null test contracts are validated against source DDL.")
 
         print("-" * 80)

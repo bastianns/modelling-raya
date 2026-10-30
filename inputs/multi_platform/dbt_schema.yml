@@ -141,6 +141,29 @@ sources:
           - name: customer_cif
             data_tests: [not_null]
 
+      - name: fraud_audit_events
+        description: "Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit"
+        meta:
+          domain: "domain_02"
+          subdomain: "subdomain_02_2"
+          subdomain_name: "Subdomain 2.2 - Credit Applications & Underwriting"
+        columns:
+          - name: event_id
+            description: "Primary key identifier event audit fraud"
+            data_tests: [not_null, unique]
+          - name: application_id
+            description: "Foreign key referensi ke scoring.credit_applications"
+            data_tests: [not_null]
+          - name: fraud_risk_score
+            description: "Skor risiko kecurangan hasil kalkulasi model anomali"
+            data_tests: [not_null]
+          - name: detection_rule
+            description: "Aturan atau model deteksi yang menandai event"
+            data_tests: [not_null]
+          - name: flagged_at
+            description: "Waktu deteksi event anomali kecurangan dicatat"
+            data_tests: [not_null]
+
   - name: channel
     description: "Channel Mitra dan Distribusi Pinjaman MySQL"
     meta:

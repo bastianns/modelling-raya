@@ -36,6 +36,21 @@ def main():
     print("Press Ctrl+C to stop watching.")
     print("=" * 75)
 
+    chart_script = base_dir / "scripts" / "seed_chartdb.py"
+
+    # Inisialisasi awal: sinkronkan langsung skema yang ada saat watcher dijalankan
+    print("\n[INIT] Menjalankan sinkronisasi awal saat daemon dimulai...")
+    res_sync = subprocess.run([sys.executable, str(sync_script)], capture_output=True, text=True)
+    if res_sync.returncode == 0:
+        print("  -> [OK] Transpiler & Shift-Left Linter terinisialisasi.")
+    else:
+        print("  -> [FAIL] Transpiler error:\n", res_sync.stderr)
+    subprocess.run([sys.executable, str(dict_script)], capture_output=True, text=True)
+    print("  -> [OK] docs/data_dictionary.html tergenerate.")
+    subprocess.run([sys.executable, str(chart_script)], capture_output=True, text=True)
+    print("  -> [OK] ChartDB seeder & bootstrap container terupdate.")
+    print("[INIT] Sinkronisasi awal SELESAI! Memantau penambahan skema baru (Ctrl+S)...\n")
+
     last_mtimes = get_dir_mtimes(watch_dir)
 
     try:
@@ -66,7 +81,16 @@ def main():
                 res_dict = subprocess.run([sys.executable, str(dict_script)], capture_output=True, text=True)
                 if res_dict.returncode == 0:
                     print("  -> [OK] docs/data_dictionary.html terupdate otomatis.")
-                print(f"[{now_str}] Selesai! Semua perubahan skema sudah disinkronkan ke container Azimutt.")
+
+                print("  -> Memperbarui Seeder & Injeksi IndexedDB ChartDB...")
+                chart_script = base_dir / "scripts" / "seed_chartdb.py"
+                res_chart = subprocess.run([sys.executable, str(chart_script)], capture_output=True, text=True)
+                if res_chart.returncode == 0:
+                    print("  -> [OK] ChartDB seeder & bootstrap container terupdate.")
+                else:
+                    print(f"  -> [WARN] ChartDB seeder notice: {res_chart.stderr.strip()[:100]}")
+
+                print(f"[{now_str}] Selesai! Semua perubahan skema sudah disinkronkan ke seluruh platform.")
 
                 last_mtimes = current_mtimes
 

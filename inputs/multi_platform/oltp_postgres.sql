@@ -53,3 +53,11 @@ COMMENT ON COLUMN scoring.credit_applications.application_status IS 'Status life
 -- Indeks Kinerja Query
 CREATE INDEX idx_scoring_cif ON scoring.credit_applications(customer_cif);
 CREATE INDEX idx_scoring_status ON scoring.credit_applications(application_status);
+
+CREATE TABLE scoring.fraud_audit_events (
+    event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    application_id UUID NOT NULL REFERENCES scoring.credit_applications(application_id),
+    fraud_risk_score DECIMAL(5,2) NOT NULL,
+    detection_rule VARCHAR(100) NOT NULL,
+    flagged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

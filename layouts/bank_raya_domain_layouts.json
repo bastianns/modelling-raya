@@ -10,31 +10,111 @@
             "left": 100,
             "top": 100
           },
-          "color": "blue"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "blue",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "tenor_months",
+            "risk_tier",
+            "score_value",
+            "application_status",
+            "submitted_at",
+            "approved_at"
+          ]
         },
         {
           "id": "scoring.scorecard_rules",
           "position": {
-            "left": 500,
+            "left": 420,
             "top": 100
           },
-          "color": "indigo"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "indigo",
+          "columns": [
+            "rule_id",
+            "rule_code",
+            "rule_name",
+            "weight_percentage",
+            "cutoff_score",
+            "is_active",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "id": "scoring.fraud_audit_events",
+          "position": {
+            "left": 740,
+            "top": 100
+          },
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "rose",
+          "columns": [
+            "event_id",
+            "application_id",
+            "fraud_risk_score",
+            "detection_rule",
+            "flagged_at"
+          ]
         },
         {
           "id": "channel.loan_disbursements",
           "position": {
             "left": 100,
-            "top": 450
+            "top": 480
           },
-          "color": "amber"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "amber",
+          "columns": [
+            "disbursement_id",
+            "application_id",
+            "partner_channel_code",
+            "account_destination",
+            "disbursement_amount",
+            "disbursement_fee",
+            "disbursement_status",
+            "channel_reference_id",
+            "disbursed_at"
+          ]
         },
         {
           "id": "legacy.collateral_registers",
           "position": {
             "left": 500,
-            "top": 450
+            "top": 480
           },
-          "color": "red"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "red",
+          "columns": [
+            "collateral_id",
+            "customer_cif",
+            "collateral_type",
+            "certificate_number",
+            "owner_name",
+            "appraisal_value",
+            "liquidation_value",
+            "custody_branch_code",
+            "is_verified",
+            "registered_at"
+          ]
         }
       ]
     },
@@ -48,7 +128,18 @@
             "left": 100,
             "top": 150
           },
-          "color": "gray"
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "gray",
+          "columns": [
+            "raw_id",
+            "payload_json",
+            "source_system",
+            "kafka_offset",
+            "ingested_at"
+          ]
         },
         {
           "id": "datastaging.stg_applications",
@@ -56,7 +147,21 @@
             "left": 450,
             "top": 150
           },
-          "color": "teal"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "teal",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "risk_tier",
+            "score_value",
+            "status",
+            "ingested_at"
+          ]
         },
         {
           "id": "datamart.fct_credit_scoring",
@@ -64,7 +169,21 @@
             "left": 800,
             "top": 80
           },
-          "color": "emerald"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "emerald",
+          "columns": [
+            "fact_id",
+            "application_id",
+            "customer_cif",
+            "credit_score",
+            "risk_tier",
+            "approved_amount",
+            "scoring_details",
+            "scoring_date"
+          ]
         },
         {
           "id": "datamart.rpt_slik_ojk",
@@ -72,7 +191,22 @@
             "left": 800,
             "top": 380
           },
-          "color": "purple"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "purple",
+          "columns": [
+            "report_id",
+            "period_yyyymm",
+            "account_number",
+            "customer_cif",
+            "collectibility_status",
+            "outstanding_balance",
+            "provision_amount",
+            "submission_status",
+            "created_at"
+          ]
         }
       ]
     },
@@ -86,7 +220,21 @@
             "left": 150,
             "top": 120
           },
-          "color": "emerald"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "emerald",
+          "columns": [
+            "fact_id",
+            "application_id",
+            "customer_cif",
+            "credit_score",
+            "risk_tier",
+            "approved_amount",
+            "scoring_details",
+            "scoring_date"
+          ]
         },
         {
           "id": "datamart.rpt_slik_ojk",
@@ -94,7 +242,22 @@
             "left": 600,
             "top": 120
           },
-          "color": "purple"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "purple",
+          "columns": [
+            "report_id",
+            "period_yyyymm",
+            "account_number",
+            "customer_cif",
+            "collectibility_status",
+            "outstanding_balance",
+            "provision_amount",
+            "submission_status",
+            "created_at"
+          ]
         }
       ]
     },
@@ -108,39 +271,131 @@
             "left": 100,
             "top": 100
           },
-          "color": "blue"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "blue",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "tenor_months",
+            "risk_tier",
+            "score_value",
+            "application_status",
+            "submitted_at",
+            "approved_at"
+          ]
         },
         {
           "id": "scoring.scorecard_rules",
           "position": {
-            "left": 450,
+            "left": 420,
             "top": 100
           },
-          "color": "indigo"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "indigo",
+          "columns": [
+            "rule_id",
+            "rule_code",
+            "rule_name",
+            "weight_percentage",
+            "cutoff_score",
+            "is_active",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "id": "scoring.fraud_audit_events",
+          "position": {
+            "left": 740,
+            "top": 100
+          },
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "rose",
+          "columns": [
+            "event_id",
+            "application_id",
+            "fraud_risk_score",
+            "detection_rule",
+            "flagged_at"
+          ]
         },
         {
           "id": "channel.loan_disbursements",
           "position": {
             "left": 100,
-            "top": 400
+            "top": 460
           },
-          "color": "amber"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "amber",
+          "columns": [
+            "disbursement_id",
+            "application_id",
+            "partner_channel_code",
+            "account_destination",
+            "disbursement_amount",
+            "disbursement_fee",
+            "disbursement_status",
+            "channel_reference_id",
+            "disbursed_at"
+          ]
         },
         {
           "id": "datastaging.stg_applications",
           "position": {
             "left": 450,
-            "top": 400
+            "top": 460
           },
-          "color": "teal"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "teal",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "risk_tier",
+            "score_value",
+            "status",
+            "ingested_at"
+          ]
         },
         {
           "id": "datamart.fct_credit_scoring",
           "position": {
             "left": 800,
-            "top": 250
+            "top": 300
           },
-          "color": "emerald"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "emerald",
+          "columns": [
+            "fact_id",
+            "application_id",
+            "customer_cif",
+            "credit_score",
+            "risk_tier",
+            "approved_amount",
+            "scoring_details",
+            "scoring_date"
+          ]
         }
       ]
     },
@@ -154,7 +409,23 @@
             "left": 150,
             "top": 150
           },
-          "color": "red"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "red",
+          "columns": [
+            "collateral_id",
+            "customer_cif",
+            "collateral_type",
+            "certificate_number",
+            "owner_name",
+            "appraisal_value",
+            "liquidation_value",
+            "custody_branch_code",
+            "is_verified",
+            "registered_at"
+          ]
         },
         {
           "id": "datamart.rpt_slik_ojk",
@@ -162,7 +433,22 @@
             "left": 600,
             "top": 150
           },
-          "color": "purple"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "purple",
+          "columns": [
+            "report_id",
+            "period_yyyymm",
+            "account_number",
+            "customer_cif",
+            "collectibility_status",
+            "outstanding_balance",
+            "provision_amount",
+            "submission_status",
+            "created_at"
+          ]
         }
       ]
     },
@@ -191,15 +477,64 @@
             "left": 100,
             "top": 100
           },
-          "color": "indigo"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "indigo",
+          "columns": [
+            "rule_id",
+            "rule_code",
+            "rule_name",
+            "weight_percentage",
+            "cutoff_score",
+            "is_active",
+            "created_at",
+            "updated_at"
+          ]
         },
         {
           "id": "scoring.credit_applications",
           "position": {
-            "left": 450,
+            "left": 420,
             "top": 100
           },
-          "color": "indigo"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "indigo",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "tenor_months",
+            "risk_tier",
+            "score_value",
+            "application_status",
+            "submitted_at",
+            "approved_at"
+          ]
+        },
+        {
+          "id": "scoring.fraud_audit_events",
+          "position": {
+            "left": 740,
+            "top": 100
+          },
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "indigo",
+          "columns": [
+            "event_id",
+            "application_id",
+            "fraud_risk_score",
+            "detection_rule",
+            "flagged_at"
+          ]
         }
       ]
     },
@@ -213,7 +548,21 @@
             "left": 100,
             "top": 100
           },
-          "color": "indigo"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "indigo",
+          "columns": [
+            "rule_id",
+            "rule_code",
+            "rule_name",
+            "weight_percentage",
+            "cutoff_score",
+            "is_active",
+            "created_at",
+            "updated_at"
+          ]
         }
       ]
     },
@@ -227,7 +576,42 @@
             "left": 100,
             "top": 100
           },
-          "color": "indigo"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "indigo",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "tenor_months",
+            "risk_tier",
+            "score_value",
+            "application_status",
+            "submitted_at",
+            "approved_at"
+          ]
+        },
+        {
+          "id": "scoring.fraud_audit_events",
+          "position": {
+            "left": 420,
+            "top": 100
+          },
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "indigo",
+          "columns": [
+            "event_id",
+            "application_id",
+            "fraud_risk_score",
+            "detection_rule",
+            "flagged_at"
+          ]
         }
       ]
     },
@@ -241,7 +625,22 @@
             "left": 100,
             "top": 100
           },
-          "color": "amber"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "amber",
+          "columns": [
+            "disbursement_id",
+            "application_id",
+            "partner_channel_code",
+            "account_destination",
+            "disbursement_amount",
+            "disbursement_fee",
+            "disbursement_status",
+            "channel_reference_id",
+            "disbursed_at"
+          ]
         }
       ]
     },
@@ -255,7 +654,22 @@
             "left": 100,
             "top": 100
           },
-          "color": "amber"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "amber",
+          "columns": [
+            "disbursement_id",
+            "application_id",
+            "partner_channel_code",
+            "account_destination",
+            "disbursement_amount",
+            "disbursement_fee",
+            "disbursement_status",
+            "channel_reference_id",
+            "disbursed_at"
+          ]
         }
       ]
     },
@@ -274,7 +688,23 @@
             "left": 100,
             "top": 100
           },
-          "color": "red"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "red",
+          "columns": [
+            "collateral_id",
+            "customer_cif",
+            "collateral_type",
+            "certificate_number",
+            "owner_name",
+            "appraisal_value",
+            "liquidation_value",
+            "custody_branch_code",
+            "is_verified",
+            "registered_at"
+          ]
         }
       ]
     },
@@ -288,7 +718,23 @@
             "left": 100,
             "top": 100
           },
-          "color": "red"
+          "size": {
+            "width": 260,
+            "height": 256
+          },
+          "color": "red",
+          "columns": [
+            "collateral_id",
+            "customer_cif",
+            "collateral_type",
+            "certificate_number",
+            "owner_name",
+            "appraisal_value",
+            "liquidation_value",
+            "custody_branch_code",
+            "is_verified",
+            "registered_at"
+          ]
         }
       ]
     },
@@ -307,7 +753,22 @@
             "left": 100,
             "top": 100
           },
-          "color": "purple"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "purple",
+          "columns": [
+            "report_id",
+            "period_yyyymm",
+            "account_number",
+            "customer_cif",
+            "collectibility_status",
+            "outstanding_balance",
+            "provision_amount",
+            "submission_status",
+            "created_at"
+          ]
         }
       ]
     },
@@ -321,7 +782,22 @@
             "left": 100,
             "top": 100
           },
-          "color": "purple"
+          "size": {
+            "width": 260,
+            "height": 234
+          },
+          "color": "purple",
+          "columns": [
+            "report_id",
+            "period_yyyymm",
+            "account_number",
+            "customer_cif",
+            "collectibility_status",
+            "outstanding_balance",
+            "provision_amount",
+            "submission_status",
+            "created_at"
+          ]
         }
       ]
     },
@@ -340,7 +816,18 @@
             "left": 100,
             "top": 100
           },
-          "color": "gray"
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "gray",
+          "columns": [
+            "raw_id",
+            "payload_json",
+            "source_system",
+            "kafka_offset",
+            "ingested_at"
+          ]
         }
       ]
     },
@@ -354,7 +841,18 @@
             "left": 100,
             "top": 100
           },
-          "color": "gray"
+          "size": {
+            "width": 260,
+            "height": 146
+          },
+          "color": "gray",
+          "columns": [
+            "raw_id",
+            "payload_json",
+            "source_system",
+            "kafka_offset",
+            "ingested_at"
+          ]
         }
       ]
     },
@@ -373,7 +871,21 @@
             "left": 100,
             "top": 100
           },
-          "color": "teal"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "teal",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "risk_tier",
+            "score_value",
+            "status",
+            "ingested_at"
+          ]
         }
       ]
     },
@@ -387,7 +899,21 @@
             "left": 100,
             "top": 100
           },
-          "color": "teal"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "teal",
+          "columns": [
+            "application_id",
+            "customer_cif",
+            "rule_id",
+            "requested_amount",
+            "risk_tier",
+            "score_value",
+            "status",
+            "ingested_at"
+          ]
         }
       ]
     },
@@ -406,7 +932,21 @@
             "left": 100,
             "top": 100
           },
-          "color": "emerald"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "emerald",
+          "columns": [
+            "fact_id",
+            "application_id",
+            "customer_cif",
+            "credit_score",
+            "risk_tier",
+            "approved_amount",
+            "scoring_details",
+            "scoring_date"
+          ]
         }
       ]
     },
@@ -420,7 +960,21 @@
             "left": 100,
             "top": 100
           },
-          "color": "emerald"
+          "size": {
+            "width": 260,
+            "height": 212
+          },
+          "color": "emerald",
+          "columns": [
+            "fact_id",
+            "application_id",
+            "customer_cif",
+            "credit_score",
+            "risk_tier",
+            "approved_amount",
+            "scoring_details",
+            "scoring_date"
+          ]
         }
       ]
     },

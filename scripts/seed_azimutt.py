@@ -14,10 +14,32 @@ import subprocess
 from pathlib import Path
 
 def find_docker_bin() -> str:
-    """Find docker executable across system paths."""
+    """Find docker executable across system paths or fallback to WSL."""
+    # Check if native docker works
+    try:
+        check = subprocess.run(["docker", "ps"], capture_output=True, text=True, check=False)
+        if check.returncode == 0:
+            return "docker"
+    except Exception:
+        pass
+
     docker_in_path = shutil.which("docker")
     if docker_in_path:
-        return docker_in_path
+        try:
+            check = subprocess.run([docker_in_path, "ps"], capture_output=True, text=True, check=False)
+            if check.returncode == 0:
+                return docker_in_path
+        except Exception:
+            pass
+
+    # Check if WSL docker works
+    try:
+        check = subprocess.run(["wsl", "-d", "Ubuntu", "-e", "docker", "ps"], capture_output=True, text=True, check=False)
+        if check.returncode == 0:
+            return "wsl -d Ubuntu -e docker"
+    except Exception:
+        pass
+
     common_paths = [
         Path(r"C:\Program Files\Docker\Docker\resources\bin\docker.exe"),
         Path(r"C:\Program Files\Docker\Docker\resources\docker.exe"),
@@ -28,7 +50,7 @@ def find_docker_bin() -> str:
             return str(p)
     return "docker"
 
-def build_azimutt_project_json(base_dir: Path) -> dict:
+def build_azimutt_project_json(base_dir: Path) -> tuple[dict, dict]:
     schema_file = base_dir / "sources" / "bank_raya_unified_schema.json"
     layouts_file = base_dir / "layouts" / "bank_raya_domain_layouts.json"
 
@@ -44,23 +66,97 @@ def build_azimutt_project_json(base_dir: Path) -> dict:
     project_id = "00000000-0000-4000-8000-000000000001"
     source_id = "00000000-0000-4000-8000-000000000002"
 
-    raw_layouts = layouts_data.get("layouts", {})
+    # 1. Transform tables to Azimutt LegacyProjectTable schema
+    formatted_tables = []
+    table_col_map = {}
+    for tbl in schema_data.get("tables", []):
+        s_name = tbl.get("schema", "")
+        t_name = tbl.get("table") or tbl.get("name", "")
+        full_id = f"{s_name}.{t_name}" if s_name else t_name
 
-    # Transform layouts to Azimutt layout schema
+        cols = []
+        col_names = []
+        for c in tbl.get("columns", []):
+            c_name = c["name"]
+            col_names.append(c_name)
+            col_dict = {
+                "name": c_name,
+                "type": c.get("type", "varchar")
+            }
+            if not c.get("nullable", True):
+                col_dict["nullable"] = False
+            if c.get("default") is not None:
+                col_dict["default"] = str(c["default"])
+            if c.get("comment"):
+                col_dict["comment"] = {"text": str(c["comment"])}
+            cols.append(col_dict)
+
+        table_col_map[full_id] = col_names
+
+        table_entry = {
+            "schema": s_name,
+            "table": t_name,
+            "columns": cols
+        }
+        if tbl.get("primaryKey"):
+            table_entry["primaryKey"] = {
+                "name": tbl["primaryKey"].get("name", f"pk_{t_name}"),
+                "columns": tbl["primaryKey"].get("columns", [])
+            }
+        if tbl.get("uniques"):
+            table_entry["uniques"] = [
+                {"name": u.get("name", f"uq_{t_name}"), "columns": u.get("columns", [])}
+                for u in tbl["uniques"]
+            ]
+        if tbl.get("indexes"):
+            table_entry["indexes"] = [
+                {"name": idx.get("name", f"idx_{t_name}"), "columns": idx.get("columns", [])}
+                for idx in tbl["indexes"]
+            ]
+        if tbl.get("checks"):
+            table_entry["checks"] = tbl["checks"]
+        if tbl.get("comment"):
+            table_entry["comment"] = {"text": str(tbl["comment"])}
+
+        formatted_tables.append(table_entry)
+
+    # 2. Transform relations to Azimutt LegacyProjectRelation schema
+    formatted_relations = []
+    for rel in schema_data.get("relations", []):
+        src = rel["src"]
+        ref = rel["ref"]
+        src_table = f"{src['schema']}.{src['table']}" if src.get("schema") else src["table"]
+        ref_table = f"{ref['schema']}.{ref['table']}" if ref.get("schema") else ref["table"]
+        formatted_relations.append({
+            "name": rel.get("name", f"fk_{src_table}_{ref_table}"),
+            "src": {
+                "table": src_table,
+                "column": src["column"]
+            },
+            "ref": {
+                "table": ref_table,
+                "column": ref["column"]
+            }
+        })
+
+    # 3. Transform layouts to Azimutt LegacyLayout schema
+    raw_layouts = layouts_data.get("layouts", {})
     formatted_layouts = {}
     for l_key, l_val in raw_layouts.items():
         layout_tables = []
         for tbl in l_val.get("tables", []):
             tbl_id = tbl.get("id", "")
-            # Azimutt layout table format: schema.table or .table
-            pos = tbl.get("position", {"left": 100, "top": 100})
+            cols = tbl.get("columns") or table_col_map.get(tbl_id, [])
+            height = max(120, 36 + 22 * len(cols))
             layout_tables.append({
                 "id": tbl_id,
-                "position": pos,
+                "position": tbl.get("position", {"left": 100, "top": 100}),
+                "size": tbl.get("size", {"width": 260, "height": height}),
                 "color": tbl.get("color", "blue"),
-                "columns": []
+                "columns": cols
             })
         formatted_layouts[l_key] = {
+            "canvas": {"position": {"left": 0, "top": 0}, "zoom": 1},
             "tables": layout_tables,
             "createdAt": now_ms,
             "updatedAt": now_ms
@@ -70,26 +166,64 @@ def build_azimutt_project_json(base_dir: Path) -> dict:
     if "initial layout" not in formatted_layouts and "oltp/core_and_channels" in formatted_layouts:
         formatted_layouts["initial layout"] = formatted_layouts["oltp/core_and_channels"]
 
-    project = {
-        "id": project_id,
+    # 4. Format types to Azimutt LegacyProjectType schema
+    formatted_types = []
+    for t in schema_data.get("types", []):
+        t_entry = {
+            "schema": t.get("schema", ""),
+            "name": t.get("name", "")
+        }
+        val = t.get("value")
+        if val and isinstance(val, dict) and ("definition" in val or "enum" in val):
+            t_entry["value"] = val
+        elif "values" in t:
+            t_entry["value"] = {"definition": f"STRUCT<{', '.join(t['values'])}>"}
+        elif "definition" in t:
+            t_entry["value"] = {"definition": t["definition"]}
+        elif "enum" in t:
+            t_entry["value"] = {"enum": t["enum"]}
+        else:
+            t_entry["value"] = {"definition": "TEXT"}
+        formatted_types.append(t_entry)
+
+    sources = [
+        {
+            "id": source_id,
+            "name": "bank_raya_unified_schema.json",
+            "kind": {
+                "kind": "JsonLocalFile",
+                "name": "bank_raya_unified_schema.json",
+                "size": schema_file.stat().st_size,
+                "modified": now_ms
+            },
+            "content": [],
+            "tables": formatted_tables,
+            "relations": formatted_relations,
+            "types": formatted_types,
+            "createdAt": now_ms,
+            "updatedAt": now_ms
+        }
+    ]
+
+    # Storage Project (LegacyProjectJson for backend uploads/projects)
+    storage_project = {
+        "_type": "json",
+        "slug": "bank-raya-enterprise",
         "name": "Bank Raya Enterprise Data Architecture",
         "description": "Unified Multi-Platform Architecture (DAMA-DMBOK V.2 & DASG 11-Domain Taxonomy)",
-        "sources": [
-            {
-                "id": source_id,
-                "name": "bank_raya_unified_schema.json",
-                "kind": {
-                    "kind": "AmlLocalFile",
-                    "name": "bank_raya_unified_schema.json",
-                    "size": schema_file.stat().st_size
-                },
-                "tables": schema_data.get("tables", []),
-                "relations": schema_data.get("relations", []),
-                "types": schema_data.get("types", []),
-                "createdAt": now_ms,
-                "updatedAt": now_ms
-            }
-        ],
+        "sources": sources,
+        "usedLayout": "oltp/core_and_channels",
+        "layouts": formatted_layouts,
+        "version": 2
+    }
+
+    # Standalone Project (LegacyProject for standalone export/import)
+    standalone_project = {
+        "id": project_id,
+        "slug": "bank-raya-enterprise",
+        "name": "Bank Raya Enterprise Data Architecture",
+        "description": "Unified Multi-Platform Architecture (DAMA-DMBOK V.2 & DASG 11-Domain Taxonomy)",
+        "sources": sources,
         "usedLayout": "oltp/core_and_channels",
         "layouts": formatted_layouts,
         "createdAt": now_ms,
@@ -97,12 +231,14 @@ def build_azimutt_project_json(base_dir: Path) -> dict:
         "version": 2
     }
 
-    return project
+    return storage_project, standalone_project
 
 
-def generate_autoload_azimutt_html(project: dict) -> str:
+def generate_autoload_azimutt_html(project: dict, project_id: str = "00000000-0000-4000-8000-000000000001") -> str:
     """Generate client-side autoloader HTML for Azimutt."""
     project_json = json.dumps(project, ensure_ascii=False)
+    nb_tables = len(project.get("sources", [{}])[0].get("tables", []))
+    nb_layouts = len(project.get("layouts", {}))
     
     html = f"""<!DOCTYPE html>
 <html lang="id">
@@ -193,7 +329,7 @@ def generate_autoload_azimutt_html(project: dict) -> str:
         <div class="badge">Bank Raya · DataOps Autoloader</div>
         <div class="spinner" id="spinner"></div>
         <h1 id="title">Menyiapkan Project Azimutt...</h1>
-        <p class="sub" id="sub">Menyinkronkan 8 tabel multi-platform dan 38 visual layouts (11 Domain DASG) ke environment Azimutt Anda.</p>
+        <p class="sub" id="sub">Menyinkronkan {nb_tables} tabel multi-platform dan {nb_layouts} visual layouts (11 Domain DASG) ke environment Azimutt Anda.</p>
         
         <div class="status-box" id="status-box">
             <div class="status-line">⚡ Membuka IndexedDB Azimutt [database: azimutt, v2]...</div>
@@ -204,7 +340,8 @@ def generate_autoload_azimutt_html(project: dict) -> str:
 
     <script>
         const PROJECT = {project_json};
-        const TARGET_URL = "http://localhost:8000/create?json=/elm/samples/bank_raya.azimutt.json";
+        const PROJECT_ID = "{project_id}";
+        const TARGET_URL = "http://localhost:8000/22222222-2222-4222-8222-222222222222/" + PROJECT_ID;
 
         function log(msg) {{
             const box = document.getElementById("status-box");
@@ -215,15 +352,46 @@ def generate_autoload_azimutt_html(project: dict) -> str:
             box.scrollTop = box.scrollHeight;
         }}
 
-        function launchAzimutt() {{
-            window.location.replace(TARGET_URL);
+        async function launchAzimutt() {{
+            log("🔍 Memeriksa status sesi login Azimutt...");
+            try {{
+                const res = await fetch("http://localhost:8000/api/v1/users/current", {{
+                    credentials: "include"
+                }});
+                if (res.status === 200) {{
+                    const userData = await res.json();
+                    log("✅ Sesi aktif terdeteksi: " + (userData.email || userData.name || "Admin"));
+                    log("🚀 Mengarahkan ke kanvas proyek Bank Raya Enterprise...");
+                    setTimeout(() => {{
+                        window.location.replace(TARGET_URL);
+                    }}, 600);
+                }} else {{
+                    log("⚠️ Sesi belum terautentikasi (HTTP " + res.status + " Unauthorized).");
+                    log("🔐 Mengarahkan ke portal login Azimutt...");
+                    document.getElementById("title").textContent = "Silakan Login Terlebih Dahulu";
+                    document.getElementById("sub").textContent = "Proyek Bank Raya Enterprise diproteksi secara privat (visibility: none). Silakan login untuk membuka kanvas.";
+                    document.getElementById("spinner").style.display = "none";
+                    const btn = document.getElementById("open-btn");
+                    btn.textContent = "Buka Halaman Login";
+                    btn.onclick = () => {{ window.location.replace("http://localhost:8000/login"); }};
+                    btn.style.display = "inline-block";
+                    setTimeout(() => {{
+                        window.location.replace("http://localhost:8000/login");
+                    }}, 1200);
+                }}
+            }} catch (err) {{
+                log("ℹ️ Error koneksi sesi, beralih ke login: " + err.message);
+                setTimeout(() => {{
+                    window.location.replace("http://localhost:8000/login");
+                }}, 1000);
+            }}
         }}
 
         async function seedAzimutt() {{
             try {{
                 log("📦 Menyimpan metadata project ke LocalStorage...");
                 try {{
-                    localStorage.setItem("project-" + PROJECT.id, JSON.stringify(PROJECT));
+                    localStorage.setItem("project-" + PROJECT_ID, JSON.stringify(PROJECT));
                 }} catch (e) {{
                     log("ℹ️ LocalStorage: " + e.message);
                 }}
@@ -245,7 +413,7 @@ def generate_autoload_azimutt_html(project: dict) -> str:
                     const db = e.target.result;
                     const tx = db.transaction(["projects"], "readwrite");
                     const store = tx.objectStore("projects");
-                    store.put(PROJECT);
+                    store.put(Object.assign({{}}, PROJECT, {{ id: PROJECT_ID }}));
 
                     tx.oncomplete = function() {{
                         log("✅ Project berhasil disimpan ke IndexedDB.");
@@ -282,12 +450,49 @@ def generate_autoload_azimutt_html(project: dict) -> str:
     return html
 
 
-def seed_postgres_metadata(docker_bin: str):
+def seed_postgres_metadata(docker_bin: str, project: dict = None):
     """Seed user, organization, and project directly into isolated PostgreSQL without exposing port."""
-    # Bcrypt hash for SteiITB2026!
-    bcrypt_pw = "$2b$12$Jzv7VxZdS97j/oYccZf1SuRraS9.uS7B9FcPxb0MhGts.SCg74UDK"
-    sql = f"""
-    -- 1. User bastiannatanaels@gmail.com
+    base_dir = Path(__file__).resolve().parent.parent
+    if project is None:
+        project, _ = build_azimutt_project_json(base_dir)
+
+    sources = project.get("sources", [])
+    nb_sources = len(sources)
+    nb_tables = sum(len(s.get("tables", [])) for s in sources)
+    nb_columns = sum(sum(len(t.get("columns", [])) for t in s.get("tables", [])) for s in sources)
+    nb_relations = sum(len(s.get("relations", [])) for s in sources)
+    nb_types = sum(len(s.get("types", [])) for s in sources)
+    nb_comments = sum(
+        sum(
+            (1 if t.get("comment") else 0) + sum(1 for c in t.get("columns", []) if c.get("comment"))
+            for t in s.get("tables", [])
+        )
+        for s in sources
+    )
+    nb_layouts = len(project.get("layouts", {}))
+
+    admin_pw_hash = os.environ.get("AZIMUTT_ADMIN_PASSWORD_HASH", "").strip()
+
+    # Check if user already exists in PostgreSQL
+    if docker_bin.startswith("wsl"):
+        base_cmd = ["wsl", "-d", "Ubuntu", "-e", "docker", "exec", "-i", "azimutt-backend-db", "psql", "-U", "azimutt_bank_admin", "-d", "azimutt_metadata"]
+    else:
+        base_cmd = [docker_bin, "exec", "-i", "azimutt-backend-db", "psql", "-U", "azimutt_bank_admin", "-d", "azimutt_metadata"]
+
+    check_cmd = base_cmd + ["-tAc", "SELECT count(*) FROM users WHERE email='bastiannatanaels@gmail.com';"]
+    check_res = subprocess.run(check_cmd, capture_output=True, text=True, check=False)
+    user_count = int(check_res.stdout.strip()) if check_res.returncode == 0 and check_res.stdout.strip().isdigit() else 0
+
+    if not admin_pw_hash:
+        if user_count == 0:
+            print("[ERROR] Variabel lingkungan AZIMUTT_ADMIN_PASSWORD_HASH belum disetel dan user admin belum ada di database.")
+            print("        Silakan set AZIMUTT_ADMIN_PASSWORD_HASH di environment atau jalankan scripts/set_admin_password.py.")
+            sys.exit(1)
+        else:
+            print("[INFO] AZIMUTT_ADMIN_PASSWORD_HASH tidak disetel, namun user sudah ada di database. Melanjutkan tanpa mengubah hashed_password.")
+
+    if admin_pw_hash:
+        user_sql = f"""
     INSERT INTO users (id, slug, name, email, avatar, is_admin, hashed_password, onboarding, last_signin, created_at, updated_at, confirmed_at)
     VALUES (
         '11111111-1111-4111-8111-111111111111',
@@ -296,7 +501,7 @@ def seed_postgres_metadata(docker_bin: str):
         'bastiannatanaels@gmail.com',
         'https://localhost/avatar.png',
         true,
-        '{bcrypt_pw}',
+        '{admin_pw_hash}',
         'completed',
         NOW(),
         NOW(),
@@ -311,8 +516,27 @@ def seed_postgres_metadata(docker_bin: str):
         confirmed_at = COALESCE(users.confirmed_at, NOW()),
         updated_at = NOW();
 
+    UPDATE users SET is_admin = true, hashed_password = '{admin_pw_hash}', confirmed_at = COALESCE(confirmed_at, NOW()), updated_at = NOW() WHERE email LIKE '%bastian%';
+    """
+    else:
+        user_sql = """
+    UPDATE users SET
+        name = 'Bastian Natanael',
+        is_admin = true,
+        onboarding = 'completed',
+        confirmed_at = COALESCE(confirmed_at, NOW()),
+        updated_at = NOW()
+    WHERE email = 'bastiannatanaels@gmail.com';
+
+    UPDATE users SET is_admin = true, confirmed_at = COALESCE(confirmed_at, NOW()), updated_at = NOW() WHERE email LIKE '%bastian%';
+    """
+
+    sql = f"""
+    -- 1. User bastiannatanaels@gmail.com
+    {user_sql}
+
     -- 2. Personal Organization (required by Azimutt dashboard)
-    INSERT INTO organizations (id, slug, name, logo, is_personal, created_by, updated_by, created_at, updated_at, plan, plan_status)
+    INSERT INTO organizations (id, slug, name, logo, is_personal, created_by, updated_by, created_at, updated_at, plan, plan_status, plan_freq, plan_seats, plan_validated)
     VALUES (
         '33333333-3333-4333-8333-333333333333',
         'bastian-natanael',
@@ -324,14 +548,32 @@ def seed_postgres_metadata(docker_bin: str):
         NOW(),
         NOW(),
         'pro',
-        'active'
+        'manual',
+        'monthly',
+        10,
+        NOW() + INTERVAL '10 years'
     )
     ON CONFLICT (slug) DO UPDATE SET
         is_personal = true,
+        plan = EXCLUDED.plan,
+        plan_status = EXCLUDED.plan_status,
+        plan_freq = EXCLUDED.plan_freq,
+        plan_seats = EXCLUDED.plan_seats,
+        plan_validated = EXCLUDED.plan_validated,
         updated_at = NOW();
 
+    -- Also upgrade any other personal organization for Bastian to pro
+    UPDATE organizations SET
+        plan = 'pro',
+        plan_status = 'manual',
+        plan_freq = 'monthly',
+        plan_seats = 10,
+        plan_validated = NOW() + INTERVAL '10 years',
+        updated_at = NOW()
+    WHERE is_personal = true;
+
     -- 3. Team Organization: Bank Raya Enterprise
-    INSERT INTO organizations (id, slug, name, logo, is_personal, created_by, updated_by, created_at, updated_at, plan, plan_status)
+    INSERT INTO organizations (id, slug, name, logo, is_personal, created_by, updated_by, created_at, updated_at, plan, plan_status, plan_freq, plan_seats, plan_validated)
     VALUES (
         '22222222-2222-4222-8222-222222222222',
         'bank-raya',
@@ -343,17 +585,24 @@ def seed_postgres_metadata(docker_bin: str):
         NOW(),
         NOW(),
         'pro',
-        'active'
+        'manual',
+        'monthly',
+        10,
+        NOW() + INTERVAL '10 years'
     )
     ON CONFLICT (slug) DO UPDATE SET
         name = EXCLUDED.name,
+        plan = EXCLUDED.plan,
+        plan_status = EXCLUDED.plan_status,
+        plan_freq = EXCLUDED.plan_freq,
+        plan_seats = EXCLUDED.plan_seats,
+        plan_validated = EXCLUDED.plan_validated,
         updated_at = NOW();
 
     -- 4. Organization Memberships
     INSERT INTO organization_members (user_id, organization_id, created_by, updated_by, created_at, updated_at, role)
-    VALUES 
-        ('11111111-1111-4111-8111-111111111111', '33333333-3333-4333-8333-333333333333', '11111111-1111-4111-8111-111111111111', '11111111-1111-4111-8111-111111111111', NOW(), NOW(), 'owner'),
-        ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', '11111111-1111-4111-8111-111111111111', '11111111-1111-4111-8111-111111111111', NOW(), NOW(), 'owner')
+    SELECT id, '22222222-2222-4222-8222-222222222222', id, id, NOW(), NOW(), 'owner'
+    FROM users WHERE email LIKE '%bastian%'
     ON CONFLICT (user_id, organization_id) DO UPDATE SET
         role = 'owner',
         updated_at = NOW();
@@ -375,7 +624,7 @@ def seed_postgres_metadata(docker_bin: str):
     INSERT INTO projects (
         id, organization_id, slug, name, description, encoding_version, storage_kind,
         file, nb_sources, nb_tables, nb_columns, nb_relations, nb_types,
-        nb_comments, nb_notes, nb_layouts, created_by_id, updated_by_id, created_at, updated_at, visibility
+        nb_comments, nb_notes, nb_layouts, created_by, updated_by, created_at, updated_at, visibility
     )
     VALUES 
     (
@@ -387,62 +636,49 @@ def seed_postgres_metadata(docker_bin: str):
         1,
         'remote',
         'projects/00000000-0000-4000-8000-000000000001.json',
-        1,
-        8,
-        65,
-        4,
-        1,
-        65,
+        {nb_sources},
+        {nb_tables},
+        {nb_columns},
+        {nb_relations},
+        {nb_types},
+        {nb_comments},
         0,
-        38,
-        '11111111-1111-4111-8111-111111111111',
-        '11111111-1111-4111-8111-111111111111',
+        {nb_layouts},
+        (SELECT id FROM users WHERE email LIKE '%bastian%' LIMIT 1),
+        (SELECT id FROM users WHERE email LIKE '%bastian%' LIMIT 1),
         NOW(),
         NOW(),
-        'write'
-    ),
-    (
-        '00000000-0000-4000-8000-000000000002',
-        '33333333-3333-4333-8333-333333333333',
-        'bank-raya-enterprise',
-        'Bank Raya Enterprise Data Architecture',
-        'Unified Multi-Platform Architecture (DAMA-DMBOK V.2 & DASG 11-Domain Taxonomy)',
-        1,
-        'remote',
-        'projects/00000000-0000-4000-8000-000000000002.json',
-        1,
-        8,
-        65,
-        4,
-        1,
-        65,
-        0,
-        38,
-        '11111111-1111-4111-8111-111111111111',
-        '11111111-1111-4111-8111-111111111111',
-        NOW(),
-        NOW(),
-        'write'
+        'none'
     )
     ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         organization_id = EXCLUDED.organization_id,
-        visibility = EXCLUDED.visibility,
+        nb_sources = EXCLUDED.nb_sources,
+        nb_tables = EXCLUDED.nb_tables,
+        nb_columns = EXCLUDED.nb_columns,
+        nb_relations = EXCLUDED.nb_relations,
+        nb_types = EXCLUDED.nb_types,
+        nb_comments = EXCLUDED.nb_comments,
         nb_layouts = EXCLUDED.nb_layouts,
+        visibility = 'none',
         updated_at = NOW();
     """
 
-    cmd = [
-        docker_bin, "exec", "-i", "azimutt-backend-db",
-        "psql", "-U", "azimutt_bank_admin", "-d", "azimutt_metadata"
-    ]
+    # Support running through wsl if docker is hosted in wsl
+    if docker_bin.startswith("wsl"):
+        cmd = ["wsl", "-d", "Ubuntu", "-e", "docker", "exec", "-i", "azimutt-backend-db", "psql", "-U", "azimutt_bank_admin", "-d", "azimutt_metadata"]
+    else:
+        cmd = [
+            docker_bin, "exec", "-i", "azimutt-backend-db",
+            "psql", "-U", "azimutt_bank_admin", "-d", "azimutt_metadata"
+        ]
     res = subprocess.run(cmd, input=sql, capture_output=True, text=True, check=False)
     if res.returncode == 0:
         print("[PASS] Successfully pre-seeded PostgreSQL metadata (user, org, project):")
-        print("  -> User:         bastiannatanaels@gmail.com (Password: SteiITB2026!)")
-        print("  -> Org Personal: bastian-natanael (is_personal = true)")
-        print("  -> Org Team:     bank-raya ('Bank Raya Enterprise')")
-        print("  -> Projects:     Pre-seeded in both personal & team workspaces")
+        print("  -> User:         bastiannatanaels@gmail.com (Role: Owner / Admin)")
+        print("  -> Org Personal: Bastian Natanael (is_personal = true, Plan: Pro 10y)")
+        print("  -> Org Team:     bank-raya ('Bank Raya Enterprise', Plan: Pro 10y)")
+        print(f"  -> Projects:     Pre-seeded with nb_tables = {nb_tables}, nb_columns = {nb_columns}, nb_layouts = {nb_layouts}, and visibility = 'none' (Private)")
     else:
         print(f"[WARN] PostgreSQL metadata seeding reported: {res.stderr}")
 
@@ -456,71 +692,63 @@ def seed_azimutt():
     print("Framework: DAMA-DMBOK V.2 | Zero-Credential-Exposure Architecture")
     print("=" * 80)
 
-    # 1. Build Full Azimutt Project JSON
-    project = build_azimutt_project_json(base_dir)
-    project_json_str = json.dumps(project, indent=2, ensure_ascii=False)
+    # 1. Build Full Azimutt Project JSON (Storage Project & Standalone Project)
+    storage_project, standalone_project = build_azimutt_project_json(base_dir)
+    storage_json_str = json.dumps(storage_project, indent=2, ensure_ascii=False)
+    standalone_json_str = json.dumps(standalone_project, indent=2, ensure_ascii=False)
 
-    # 2. Save locally to multiple paths for persistent volume mounts & Waffle uploads
-    out_paths = [
-        base_dir / "sources" / "bank_raya.azimutt.json",
+    # 2. Save project file (strictly adhering to LegacyProjectJson schema)
+    standalone_path = base_dir / "sources" / "bank_raya.azimutt.json"
+    standalone_path.parent.mkdir(parents=True, exist_ok=True)
+    standalone_path.write_text(storage_json_str, encoding="utf-8")
+
+    # 3. Save storage project files (LegacyProjectJson) for backend volume & Waffle uploads
+    storage_paths = [
         base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000001_original.json",
         base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000001.json",
-        base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000002_original.json",
-        base_dir / "azimutt-data" / "uploads" / "00000000-0000-4000-8000-000000000002.json",
         base_dir / "azimutt-data" / "uploads" / "projects" / "00000000-0000-4000-8000-000000000001.json",
-        base_dir / "azimutt-data" / "uploads" / "projects" / "00000000-0000-4000-8000-000000000002.json",
         base_dir / "azimutt-data" / "uploads" / "projects" / "bank-raya-enterprise.json"
     ]
-    for p in out_paths:
+    for p in storage_paths:
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(project_json_str, encoding="utf-8")
+        p.write_text(storage_json_str, encoding="utf-8")
 
     print(f"[INFO] Generated Azimutt Unified Project JSON:")
-    print(f"  -> Project Name: {project['name']}")
-    print(f"  -> Layouts:      {len(project['layouts'])} DAMA-DMBOK / DASG domain views")
-    print(f"  -> Saved Local:  {out_paths[0].relative_to(base_dir)}")
+    print(f"  -> Project Name: {storage_project['name']}")
+    print(f"  -> Layouts:      {len(storage_project['layouts'])} DAMA-DMBOK / DASG domain views")
+    print(f"  -> Saved Local:  {standalone_path.relative_to(base_dir)}")
+    print(f"  -> Saved Storage: {storage_paths[2].relative_to(base_dir)}")
 
-    # 3. Generate HTML autoloader fallback
-    html_content = generate_autoload_azimutt_html(project)
+    # 4. Generate HTML autoloader fallback
+    html_content = generate_autoload_azimutt_html(storage_project, project_id=standalone_project["id"])
     autoload_file = base_dir / "azimutt-data" / "autoload_azimutt.html"
     autoload_file.write_text(html_content, encoding="utf-8")
     print(f"[INFO] Generated Client-Side Autoloader: {autoload_file.relative_to(base_dir)}")
 
-    # 4. Check Docker Containers & Seed
+    # 5. Check Docker Containers & Seed
     try:
-        inspect_cmd = [docker_bin, "ps", "--format", "{{.Names}}"]
+        def to_wsl_path(p: Path) -> str:
+            if docker_bin.startswith("wsl"):
+                drive = p.drive.replace(":", "").lower()
+                rel = p.as_posix().split(":", 1)[-1]
+                return f"/mnt/{drive}{rel}"
+            return str(p)
+
+        def make_docker_cmd(args):
+            if docker_bin.startswith("wsl"):
+                return ["wsl", "-d", "Ubuntu", "-e", "docker"] + args
+            return [docker_bin] + args
+
+        inspect_cmd = make_docker_cmd(["ps", "--format", "{{.Names}}"])
         res = subprocess.run(inspect_cmd, capture_output=True, text=True, check=False)
         running_containers = res.stdout.split()
 
         # Seed PostgreSQL backend if azimutt-backend-db is running
         if "azimutt-backend-db" in running_containers:
             print("[INFO] Seeding PostgreSQL internal metadata via secure docker exec...")
-            seed_postgres_metadata(docker_bin)
+            seed_postgres_metadata(docker_bin, storage_project)
         else:
             print("[WARN] Container 'azimutt-backend-db' is not running. Skipping DB seeding.")
-
-        # Seed static sample into azimutt-app if running
-        if "azimutt-app" in running_containers:
-            print("[INFO] Injecting 'bank_raya.azimutt.json' into Azimutt static sample registry...")
-            target_container_path = "azimutt-app:/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json"
-            subprocess.run([docker_bin, "cp", str(out_paths[0]), target_container_path], check=False)
-
-            # Also overwrite basic.azimutt.json so default sample URL natively loads Bank Raya
-            sh_cmd = (
-                "cp /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json "
-                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt.json && "
-                "cp /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json "
-                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt-85e3ad10ffd11b6d56c4e.json && "
-                "gzip -c -f /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json > "
-                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt.json.gz && "
-                "gzip -c -f /app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/bank_raya.azimutt.json > "
-                "/app/lib/azimutt-2.0.1787693579/priv/static/elm/samples/basic.azimutt-85e3ad10ffd11b6d56c4e.json.gz"
-            )
-            subprocess.run([docker_bin, "exec", "-u", "root", "azimutt-app", "sh", "-c", sh_cmd], check=False)
-            print("[PASS] Successfully updated Azimutt sample files (Zero-Form Ready).")
-            print("  -> Direct Instant View: http://localhost:8000/create?json=/elm/samples/basic.azimutt.json")
-        else:
-            print("[WARN] Container 'azimutt-app' is not running. Will be injected on launch.")
 
     except Exception as e:
         print(f"[WARN] Error executing Docker automation: {e}")
