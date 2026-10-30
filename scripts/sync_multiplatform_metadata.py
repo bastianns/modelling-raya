@@ -33,6 +33,15 @@ class MultiPlatformMetadataParser:
         self.ssot_sources = {}      # (schema, table) -> list of source platforms
         self.ssot_dedup_count = 0   # count of smart merges
 
+    def add_relation(self, rel: dict):
+        """Add relation with deduplication by name and endpoints."""
+        for existing in self.relations:
+            if existing.get("name") == rel.get("name"):
+                return
+            if existing.get("src") == rel.get("src") and existing.get("ref") == rel.get("ref"):
+                return
+        self.relations.append(rel)
+
     def register_or_merge_table(self, schema: str, name: str, table_dict: dict, source_label: str):
         """Canonical Entity Deduplication (Single Source of Truth) based on FQN (schema.table)."""
         norm_schema = schema.strip().lower()
@@ -93,7 +102,10 @@ class MultiPlatformMetadataParser:
                     
             # 6. Merge comment
             if table_dict.get("comment") and table_dict["comment"] not in existing.get("comment", ""):
-                existing["comment"] += f" | {table_dict['comment']}"
+                if not existing.get("comment"):
+                    existing["comment"] = table_dict["comment"]
+                elif not table_dict["comment"].startswith("Tabel "):
+                    existing["comment"] += f" | {table_dict['comment']}"
 
     def parse_postgres(self):
         pg_file = self.inputs_dir / "oltp_postgres.sql"
@@ -136,6 +148,7 @@ class MultiPlatformMetadataParser:
                 {"name": "tenor_months", "type": "INT", "nullable": False, "default": "12", "comment": "Jangka waktu pinjaman dalam bulan"},
                 {"name": "risk_tier", "type": "VARCHAR(5)", "nullable": False, "default": None, "comment": "Klasifikasi profil risiko (TIER_1 s.d TIER_5)"},
                 {"name": "score_value", "type": "INT", "nullable": False, "default": None, "comment": "Nilai skor kredit hasil evaluasi engine"},
+                {"name": "monthly_income", "type": "NUMERIC(15,2)", "nullable": False, "default": "0.00", "comment": "Estimasi penghasilan bulanan nasabah pemohon kredit"},
                 {"name": "application_status", "type": "VARCHAR(20)", "nullable": False, "default": "'IN_REVIEW'", "comment": "Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED"},
                 {"name": "submitted_at", "type": "TIMESTAMPTZ", "nullable": True, "default": "CURRENT_TIMESTAMP", "comment": "Waktu pengajuan diajukan"},
                 {"name": "approved_at", "type": "TIMESTAMPTZ", "nullable": True, "default": None, "comment": "Waktu persetujuan pinjaman"}
@@ -150,7 +163,7 @@ class MultiPlatformMetadataParser:
             "comment": "Transaksi pengajuan pinjaman digital nasabah retail dan mikro Bank Raya"
         }, "PostgreSQL OLTP")
 
-        self.relations.append({
+        self.add_relation({
             "name": "fk_credit_app_scorecard",
             "src": {"schema": "scoring", "table": "credit_applications", "column": "rule_id"},
             "ref": {"schema": "scoring", "table": "scorecard_rules", "column": "rule_id"}
@@ -165,8 +178,6 @@ class MultiPlatformMetadataParser:
         for tm in table_matches:
             schema_name = tm.group(1) or "scoring"
             tbl_name = tm.group(2)
-            if (schema_name, tbl_name) in self.tables:
-                continue
 
             body = tm.group(3)
             parsed_cols = []
@@ -209,7 +220,7 @@ class MultiPlatformMetadataParser:
                     ref_schema = m.group(3) or schema_name
                     ref_tbl = m.group(4).strip()
                     ref_col = m.group(5).strip()
-                    self.relations.append({
+                    self.add_relation({
                         "name": c_name,
                         "src": {"schema": schema_name, "table": tbl_name, "column": src_col},
                         "ref": {"schema": ref_schema, "table": ref_tbl, "column": ref_col}
@@ -230,7 +241,7 @@ class MultiPlatformMetadataParser:
                         ref_sch = ref_m.group(1) or schema_name
                         ref_t = ref_m.group(2)
                         ref_c = ref_m.group(3)
-                        self.relations.append({
+                        self.add_relation({
                             "name": f"fk_{tbl_name}_{col_name}",
                             "src": {"schema": schema_name, "table": tbl_name, "column": col_name},
                             "ref": {"schema": ref_sch, "table": ref_t, "column": ref_c}
@@ -249,6 +260,16 @@ class MultiPlatformMetadataParser:
                         "comment": f"Field {col_name} pada {schema_name}.{tbl_name}"
                     })
 
+            tbl_comment = None
+            tbl_cm = re.search(rf"COMMENT\s+ON\s+TABLE\s+(?:{schema_name}\.)?{tbl_name}\s+IS\s+'(.*?)';", content, re.I)
+            if tbl_cm:
+                tbl_comment = tbl_cm.group(1)
+
+            for c in parsed_cols:
+                col_cm = re.search(rf"COMMENT\s+ON\s+COLUMN\s+(?:{schema_name}\.)?{tbl_name}\.{c['name']}\s+IS\s+'(.*?)';", content, re.I)
+                if col_cm:
+                    c["comment"] = col_cm.group(1)
+
             self.register_or_merge_table(schema_name, tbl_name, {
                 "schema": schema_name,
                 "name": tbl_name,
@@ -258,7 +279,7 @@ class MultiPlatformMetadataParser:
                 "uniques": uniques,
                 "indexes": [],
                 "checks": [],
-                "comment": f"Tabel penambahan dinamis {schema_name}.{tbl_name}"
+                "comment": tbl_comment or f"Tabel {schema_name}.{tbl_name}"
             }, "PostgreSQL OLTP")
 
     def parse_mysql(self):
@@ -291,7 +312,7 @@ class MultiPlatformMetadataParser:
             "comment": "Transaksi real-time pencairan pinjaman melalui mitra channel digital Bank Raya"
         }, "MySQL OLTP")
 
-        self.relations.append({
+        self.add_relation({
             "name": "fk_disbursement_scoring_app",
             "src": {"schema": "channel", "table": "loan_disbursements", "column": "application_id"},
             "ref": {"schema": "scoring", "table": "credit_applications", "column": "application_id"}
@@ -371,7 +392,7 @@ class MultiPlatformMetadataParser:
             "comment": "Staging data pengajuan pinjaman terstandarisasi siap dikonsumsi analitik"
         }, "BigQuery Staging")
 
-        self.relations.append({
+        self.add_relation({
             "name": "fk_stg_raw_applications",
             "src": {"schema": "datastaging", "table": "stg_applications", "column": "application_id"},
             "ref": {"schema": "dataraw", "table": "raw_applications", "column": "raw_id"}
@@ -399,7 +420,7 @@ class MultiPlatformMetadataParser:
             "comment": "Fakta analitik credit scoring untuk pemodelan risiko dan portfolio debitur"
         }, "BigQuery Mart")
 
-        self.relations.append({
+        self.add_relation({
             "name": "fk_fct_stg_applications",
             "src": {"schema": "datamart", "table": "fct_credit_scoring", "column": "application_id"},
             "ref": {"schema": "datastaging", "table": "stg_applications", "column": "application_id"}
@@ -517,7 +538,7 @@ class MultiPlatformMetadataParser:
                                         # check if already exists
                                         exists = any(r["src"]["table"] == t_name and r["src"]["column"] == col_name for r in self.relations)
                                         if not exists:
-                                            self.relations.append({
+                                            self.add_relation({
                                                 "name": rel_name,
                                                 "src": {"schema": s_name, "table": t_name, "column": col_name},
                                                 "ref": {"schema": target_schema, "table": target_table, "column": to_field}
