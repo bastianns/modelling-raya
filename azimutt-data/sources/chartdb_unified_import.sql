@@ -91,26 +91,6 @@ COMMENT ON COLUMN legacy.collateral_registers.is_verified IS 'Flag verifikasi ke
 COMMENT ON COLUMN legacy.collateral_registers.registered_at IS 'Waktu pencatatan agunan';
 
 -- ------------------------------------------------------------------------------
--- Platform: PostgreSQL 16 (Core OLTP)
--- Table: scoring.risk_blacklist
--- ------------------------------------------------------------------------------
-CREATE TABLE scoring.risk_blacklist (
-    blacklist_id UUID NOT NULL DEFAULT gen_random_uuid(),
-    customer_cif VARCHAR(20) NOT NULL,
-    blacklist_reason VARCHAR(255) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    flagged_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_risk_blacklist PRIMARY KEY (blacklist_id)
-);
-
-COMMENT ON TABLE scoring.risk_blacklist IS 'Daftar hitam risiko fraud dan penolakan kredit Bank Raya';
-COMMENT ON COLUMN scoring.risk_blacklist.blacklist_id IS 'Primary key UUID catatan blacklist';
-COMMENT ON COLUMN scoring.risk_blacklist.customer_cif IS 'Nomor CIF nasabah yang masuk daftar hitam';
-COMMENT ON COLUMN scoring.risk_blacklist.blacklist_reason IS 'Alasan nasabah dimasukkan dalam daftar hitam';
-COMMENT ON COLUMN scoring.risk_blacklist.is_active IS 'Field is_active pada scoring.risk_blacklist';
-COMMENT ON COLUMN scoring.risk_blacklist.flagged_at IS 'Field flagged_at pada scoring.risk_blacklist';
-
--- ------------------------------------------------------------------------------
 -- Platform: PostgreSQL 16 (Core OLTP) + PostgreSQL OLTP
 -- Table: scoring.scorecard_rules
 -- ------------------------------------------------------------------------------
@@ -200,7 +180,6 @@ CREATE TABLE scoring.credit_applications (
     tenor_months INT NOT NULL DEFAULT 12,
     risk_tier VARCHAR(5) NOT NULL,
     score_value INT NOT NULL,
-    monthly_income NUMERIC(15,2) NOT NULL DEFAULT 0.00,
     application_status VARCHAR(20) NOT NULL DEFAULT 'IN_REVIEW',
     submitted_at TIMESTAMP WITH TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP WITH TIME ZONE NULL,
@@ -215,7 +194,6 @@ COMMENT ON COLUMN scoring.credit_applications.requested_amount IS 'Nominal pinja
 COMMENT ON COLUMN scoring.credit_applications.tenor_months IS 'Jangka waktu pinjaman dalam bulan | Field tenor_months pada scoring.credit_applications';
 COMMENT ON COLUMN scoring.credit_applications.risk_tier IS 'Klasifikasi profil risiko (TIER_1 s.d TIER_5)';
 COMMENT ON COLUMN scoring.credit_applications.score_value IS 'Nilai skor kredit hasil evaluasi engine';
-COMMENT ON COLUMN scoring.credit_applications.monthly_income IS 'Estimasi penghasilan bulanan nasabah pemohon kredit';
 COMMENT ON COLUMN scoring.credit_applications.application_status IS 'Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED';
 COMMENT ON COLUMN scoring.credit_applications.submitted_at IS 'Waktu pengajuan diajukan | Field submitted_at pada scoring.credit_applications';
 COMMENT ON COLUMN scoring.credit_applications.approved_at IS 'Waktu persetujuan pinjaman | Field approved_at pada scoring.credit_applications';

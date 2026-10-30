@@ -34,7 +34,6 @@ CREATE TABLE scoring.credit_applications (
     tenor_months INT NOT NULL DEFAULT 12,
     risk_tier VARCHAR(5) NOT NULL,
     score_value INT NOT NULL,
-    monthly_income NUMERIC(15,2) DEFAULT 0.00 NOT NULL,
     application_status VARCHAR(20) DEFAULT 'IN_REVIEW' NOT NULL,
     submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP WITH TIME ZONE,
@@ -49,7 +48,6 @@ COMMENT ON COLUMN scoring.credit_applications.rule_id IS 'Foreign key ke master 
 COMMENT ON COLUMN scoring.credit_applications.requested_amount IS 'Nominal pinjaman yang diajukan dalam IDR';
 COMMENT ON COLUMN scoring.credit_applications.risk_tier IS 'Klasifikasi profil risiko (TIER_1 s.d TIER_5)';
 COMMENT ON COLUMN scoring.credit_applications.score_value IS 'Nilai skor kredit hasil evaluasi engine';
-COMMENT ON COLUMN scoring.credit_applications.monthly_income IS 'Estimasi penghasilan bulanan nasabah pemohon kredit';
 COMMENT ON COLUMN scoring.credit_applications.application_status IS 'Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED';
 
 -- Indeks Kinerja Query
@@ -63,17 +61,3 @@ CREATE TABLE scoring.fraud_audit_events (
     detection_rule VARCHAR(100) NOT NULL,
     flagged_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
--- Master Daftar Hitam Nasabah Berisiko Tinggi
-CREATE TABLE scoring.risk_blacklist (
-    blacklist_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_cif VARCHAR(20) NOT NULL,
-    blacklist_reason VARCHAR(255) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE NOT NULL,
-    flagged_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-COMMENT ON TABLE scoring.risk_blacklist IS 'Daftar hitam risiko fraud dan penolakan kredit Bank Raya';
-COMMENT ON COLUMN scoring.risk_blacklist.blacklist_id IS 'Primary key UUID catatan blacklist';
-COMMENT ON COLUMN scoring.risk_blacklist.customer_cif IS 'Nomor CIF nasabah yang masuk daftar hitam';
-COMMENT ON COLUMN scoring.risk_blacklist.blacklist_reason IS 'Alasan nasabah dimasukkan dalam daftar hitam';

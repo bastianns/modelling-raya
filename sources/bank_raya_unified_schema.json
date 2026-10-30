@@ -10,63 +10,81 @@
           "type": "BIGINT",
           "nullable": false,
           "default": null,
-          "comment": "Surrogate primary key auto increment"
+          "comment": "Surrogate primary key auto increment",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "application_id",
           "type": "VARCHAR(36)",
           "nullable": false,
           "default": null,
-          "comment": "ID Pengajuan Kredit referensi ke scoring core engine"
+          "comment": "ID Pengajuan Kredit referensi ke scoring core engine",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "partner_channel_code",
           "type": "VARCHAR(50)",
           "nullable": false,
           "default": null,
-          "comment": "Kode identifikasi mitra agregator / keagenan digital"
+          "comment": "Kode identifikasi mitra agregator / keagenan digital",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "account_destination",
           "type": "VARCHAR(30)",
           "nullable": false,
           "default": null,
-          "comment": "Nomor rekening tujuan pencairan dana nasabah"
+          "comment": "Nomor rekening tujuan pencairan dana nasabah",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "disbursement_amount",
           "type": "DECIMAL(18,2)",
           "nullable": false,
           "default": null,
-          "comment": "Nominal dana yang dicairkan ke nasabah"
+          "comment": "Nominal dana yang dicairkan ke nasabah",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "disbursement_fee",
           "type": "DECIMAL(10,2)",
           "nullable": false,
           "default": "0.00",
-          "comment": "Biaya administrasi / transfer pencairan"
+          "comment": "Biaya administrasi / transfer pencairan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "disbursement_status",
           "type": "VARCHAR(20)",
           "nullable": false,
           "default": "'PENDING'",
-          "comment": "Status pencairan: PENDING, SUCCESS, FAILED"
+          "comment": "Status pencairan: PENDING, SUCCESS, FAILED",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "channel_reference_id",
           "type": "VARCHAR(100)",
           "nullable": false,
           "default": null,
-          "comment": "Nomor referensi settlement transaksi mitra"
+          "comment": "Nomor referensi settlement transaksi mitra",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "disbursed_at",
           "type": "TIMESTAMP",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu eksekusi pencairan pinjaman"
+          "comment": "Waktu eksekusi pencairan pinjaman",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -110,56 +128,72 @@
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Surrogate key fakta penilaian kredit"
+          "comment": "Surrogate key fakta penilaian kredit",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "application_id",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Relasi foreign key ke tabel staging pengajuan pinjaman"
+          "comment": "Relasi foreign key ke tabel staging pengajuan pinjaman",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "customer_cif",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Nomor CIF nasabah yang dinilai skor kreditnya"
+          "comment": "Nomor CIF nasabah yang dinilai skor kreditnya",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "credit_score",
           "type": "INT64",
           "nullable": false,
           "default": null,
-          "comment": "Nilai skor kredit terhitung (skala 300 - 850)"
+          "comment": "Nilai skor kredit terhitung (skala 300 - 850)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "risk_tier",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Klasifikasi profil risiko nasabah (TIER_1 s.d. TIER_5)"
+          "comment": "Klasifikasi profil risiko nasabah (TIER_1 s.d. TIER_5)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "approved_amount",
           "type": "NUMERIC",
           "nullable": false,
           "default": null,
-          "comment": "Nominal plafond yang disetujui"
+          "comment": "Nominal plafond yang disetujui",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "scoring_details",
           "type": "STRUCT<model_version STRING, probability_of_default NUMERIC, score_cutoff INT64>",
           "nullable": true,
           "default": null,
-          "comment": "Struktur detail model statistik machine learning"
+          "comment": "Struktur detail model statistik machine learning",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "scoring_date",
           "type": "TIMESTAMP",
           "nullable": false,
           "default": null,
-          "comment": "Tanggal dan waktu evaluasi credit scoring"
+          "comment": "Tanggal dan waktu evaluasi credit scoring",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -183,63 +217,81 @@
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Primary key baris pelaporan bulanan SLIK OJK"
+          "comment": "Primary key baris pelaporan bulanan SLIK OJK",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "period_yyyymm",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Periode akuntansi pelaporan format tahun-bulan (YYYYMM)"
+          "comment": "Periode akuntansi pelaporan format tahun-bulan (YYYYMM)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "account_number",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Nomor rekening fasilitas kredit debitur"
+          "comment": "Nomor rekening fasilitas kredit debitur",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "customer_cif",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Nomor CIF nasabah debitur"
+          "comment": "Nomor CIF nasabah debitur",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "collectibility_status",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Kolektibilitas debitur per POJK (1: Lancar, 2: DPK, 3: Kurang Lancar, 4: Diragukan, 5: Macet)"
+          "comment": "Kolektibilitas debitur per POJK (1: Lancar, 2: DPK, 3: Kurang Lancar, 4: Diragukan, 5: Macet)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "outstanding_balance",
           "type": "NUMERIC",
           "nullable": false,
           "default": null,
-          "comment": "Total saldo pokok pinjaman aktif"
+          "comment": "Total saldo pokok pinjaman aktif",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "provision_amount",
           "type": "NUMERIC",
           "nullable": false,
           "default": null,
-          "comment": "Cadangan Kerugian Penurunan Nilai (CKPN)"
+          "comment": "Cadangan Kerugian Penurunan Nilai (CKPN)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "submission_status",
           "type": "STRING",
           "nullable": true,
           "default": "'PENDING'",
-          "comment": "Status pelaporan ke OJK (PENDING, SUBMITTED, APPROVED)"
+          "comment": "Status pelaporan ke OJK (PENDING, SUBMITTED, APPROVED)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "created_at",
           "type": "TIMESTAMP",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP()",
-          "comment": "Waktu pembentukan data agregasi"
+          "comment": "Waktu pembentukan data agregasi",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -263,35 +315,45 @@
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Surrogate identifier mentah ingestion data"
+          "comment": "Surrogate identifier mentah ingestion data",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "payload_json",
           "type": "STRING",
           "nullable": true,
           "default": null,
-          "comment": "JSON string representasi event transaksi pengajuan kredit"
+          "comment": "JSON string representasi event transaksi pengajuan kredit",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "source_system",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)"
+          "comment": "Nama sistem pengirim transaksi (misal: OLTP_CORE_POSTGRES)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "kafka_offset",
           "type": "INT64",
           "nullable": true,
           "default": null,
-          "comment": "Offset Kafka message partition"
+          "comment": "Offset Kafka message partition",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "ingested_at",
           "type": "TIMESTAMP",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP()",
-          "comment": "Waktu ingestion ke BigQuery"
+          "comment": "Waktu ingestion ke BigQuery",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -315,56 +377,72 @@
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "ID pengajuan pinjaman (UUID string terstandarisasi)"
+          "comment": "ID pengajuan pinjaman (UUID string terstandarisasi)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "customer_cif",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Nomor identifikasi unik nasabah (Customer Information File)"
+          "comment": "Nomor identifikasi unik nasabah (Customer Information File)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "rule_id",
           "type": "INT64",
           "nullable": true,
           "default": null,
-          "comment": "ID rule scorecard kredit"
+          "comment": "ID rule scorecard kredit",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "requested_amount",
           "type": "NUMERIC",
           "nullable": false,
           "default": null,
-          "comment": "Nominal pengajuan plafond kredit dalam Rupiah"
+          "comment": "Nominal pengajuan plafond kredit dalam Rupiah",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "risk_tier",
           "type": "STRING",
           "nullable": true,
           "default": null,
-          "comment": "Kategori risiko kredit"
+          "comment": "Kategori risiko kredit",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "score_value",
           "type": "INT64",
           "nullable": true,
           "default": null,
-          "comment": "Nilai skor kredit evaluasi engine"
+          "comment": "Nilai skor kredit evaluasi engine",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "status",
           "type": "STRING",
           "nullable": false,
           "default": null,
-          "comment": "Status verifikasi pengajuan kredit"
+          "comment": "Status verifikasi pengajuan kredit",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "ingested_at",
           "type": "TIMESTAMP",
           "nullable": false,
           "default": null,
-          "comment": "Waktu normalisasi staging"
+          "comment": "Waktu normalisasi staging",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -388,70 +466,90 @@
           "type": "INT",
           "nullable": false,
           "default": null,
-          "comment": "Identity primary key agunan"
+          "comment": "Identity primary key agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "customer_cif",
           "type": "NVARCHAR(20)",
           "nullable": false,
           "default": null,
-          "comment": "Nomor CIF nasabah pemilik agunan"
+          "comment": "Nomor CIF nasabah pemilik agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "collateral_type",
           "type": "NVARCHAR(50)",
           "nullable": false,
           "default": null,
-          "comment": "Jenis agunan (SHM, BPKB, Deposito)"
+          "comment": "Jenis agunan (SHM, BPKB, Deposito)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "certificate_number",
           "type": "NVARCHAR(100)",
           "nullable": false,
           "default": null,
-          "comment": "Nomor sertifikat bukti kepemilikan agunan"
+          "comment": "Nomor sertifikat bukti kepemilikan agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "owner_name",
           "type": "NVARCHAR(150)",
           "nullable": false,
           "default": null,
-          "comment": "Nama pemilik yang tertera di sertifikat agunan"
+          "comment": "Nama pemilik yang tertera di sertifikat agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "appraisal_value",
           "type": "DECIMAL(18,2)",
           "nullable": false,
           "default": null,
-          "comment": "Nilai pasar hasil taksasi agunan"
+          "comment": "Nilai pasar hasil taksasi agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "liquidation_value",
           "type": "DECIMAL(18,2)",
           "nullable": false,
           "default": null,
-          "comment": "Nilai likuidasi agunan"
+          "comment": "Nilai likuidasi agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "custody_branch_code",
           "type": "NVARCHAR(10)",
           "nullable": false,
           "default": null,
-          "comment": "Kode unit cabang penyimpanan fisik dokumen jaminan"
+          "comment": "Kode unit cabang penyimpanan fisik dokumen jaminan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "is_verified",
           "type": "BIT",
           "nullable": false,
           "default": "1",
-          "comment": "Flag verifikasi keaslian dokumen agunan"
+          "comment": "Flag verifikasi keaslian dokumen agunan",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "registered_at",
           "type": "DATETIME2",
           "nullable": false,
           "default": "GETDATE()",
-          "comment": "Waktu pencatatan agunan"
+          "comment": "Waktu pencatatan agunan",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -475,77 +573,90 @@
           "type": "UUID",
           "nullable": false,
           "default": null,
-          "comment": "UUID unik pengajuan pinjaman nasabah"
+          "comment": "UUID unik pengajuan pinjaman nasabah",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "customer_cif",
           "type": "VARCHAR(20)",
           "nullable": false,
           "default": null,
-          "comment": "Nomor CIF nasabah Bank Raya"
+          "comment": "Nomor CIF nasabah Bank Raya",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "rule_id",
           "type": "INT",
           "nullable": false,
           "default": null,
-          "comment": "Foreign key ke master scorecard rules"
+          "comment": "Foreign key ke master scorecard rules",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "requested_amount",
           "type": "NUMERIC(18,2)",
           "nullable": false,
           "default": null,
-          "comment": "Nominal pinjaman yang diajukan dalam IDR"
+          "comment": "Nominal pinjaman yang diajukan dalam IDR",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "tenor_months",
           "type": "INT",
           "nullable": false,
           "default": "12",
-          "comment": "Jangka waktu pinjaman dalam bulan | Field tenor_months pada scoring.credit_applications"
+          "comment": "Jangka waktu pinjaman dalam bulan | Field tenor_months pada scoring.credit_applications",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "risk_tier",
           "type": "VARCHAR(5)",
           "nullable": false,
           "default": null,
-          "comment": "Klasifikasi profil risiko (TIER_1 s.d TIER_5)"
+          "comment": "Klasifikasi profil risiko (TIER_1 s.d TIER_5)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "score_value",
           "type": "INT",
           "nullable": false,
           "default": null,
-          "comment": "Nilai skor kredit hasil evaluasi engine"
-        },
-        {
-          "name": "monthly_income",
-          "type": "NUMERIC(15,2)",
-          "nullable": false,
-          "default": "0.00",
-          "comment": "Estimasi penghasilan bulanan nasabah pemohon kredit"
+          "comment": "Nilai skor kredit hasil evaluasi engine",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "application_status",
           "type": "VARCHAR(20)",
           "nullable": false,
           "default": "'IN_REVIEW'",
-          "comment": "Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED"
+          "comment": "Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "submitted_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu pengajuan diajukan | Field submitted_at pada scoring.credit_applications"
+          "comment": "Waktu pengajuan diajukan | Field submitted_at pada scoring.credit_applications",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "approved_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": null,
-          "comment": "Waktu persetujuan pinjaman | Field approved_at pada scoring.credit_applications"
+          "comment": "Waktu persetujuan pinjaman | Field approved_at pada scoring.credit_applications",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -582,35 +693,45 @@
           "type": "UUID",
           "nullable": false,
           "default": "gen_random_uuid()",
-          "comment": "Primary key identifier event audit fraud"
+          "comment": "Primary key identifier event audit fraud",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "application_id",
           "type": "UUID",
           "nullable": false,
           "default": null,
-          "comment": "Foreign key referensi ke scoring.credit_applications"
+          "comment": "Foreign key referensi ke scoring.credit_applications",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "fraud_risk_score",
           "type": "DECIMAL(5,2)",
           "nullable": false,
           "default": null,
-          "comment": "Skor risiko kecurangan hasil kalkulasi model anomali"
+          "comment": "Skor risiko kecurangan hasil kalkulasi model anomali",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "detection_rule",
           "type": "VARCHAR(100)",
           "nullable": false,
           "default": null,
-          "comment": "Aturan atau model deteksi yang menandai event"
+          "comment": "Aturan atau model deteksi yang menandai event",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "flagged_at",
           "type": "TIMESTAMP",
           "nullable": false,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu deteksi event anomali kecurangan dicatat"
+          "comment": "Waktu deteksi event anomali kecurangan dicatat",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {
@@ -626,58 +747,6 @@
     },
     {
       "schema": "scoring",
-      "table": "risk_blacklist",
-      "name": "risk_blacklist",
-      "columns": [
-        {
-          "name": "blacklist_id",
-          "type": "UUID",
-          "nullable": false,
-          "default": "gen_random_uuid()",
-          "comment": "Primary key UUID catatan blacklist"
-        },
-        {
-          "name": "customer_cif",
-          "type": "VARCHAR(20)",
-          "nullable": false,
-          "default": null,
-          "comment": "Nomor CIF nasabah yang masuk daftar hitam"
-        },
-        {
-          "name": "blacklist_reason",
-          "type": "VARCHAR(255)",
-          "nullable": false,
-          "default": null,
-          "comment": "Alasan nasabah dimasukkan dalam daftar hitam"
-        },
-        {
-          "name": "is_active",
-          "type": "BOOLEAN",
-          "nullable": false,
-          "default": "TRUE",
-          "comment": "Field is_active pada scoring.risk_blacklist"
-        },
-        {
-          "name": "flagged_at",
-          "type": "TIMESTAMP",
-          "nullable": true,
-          "default": "CURRENT_TIMESTAMP",
-          "comment": "Field flagged_at pada scoring.risk_blacklist"
-        }
-      ],
-      "primaryKey": {
-        "name": "pk_risk_blacklist",
-        "columns": [
-          "blacklist_id"
-        ]
-      },
-      "uniques": [],
-      "indexes": [],
-      "checks": [],
-      "comment": "Daftar hitam risiko fraud dan penolakan kredit Bank Raya"
-    },
-    {
-      "schema": "scoring",
       "table": "scorecard_rules",
       "name": "scorecard_rules",
       "columns": [
@@ -686,56 +755,72 @@
           "type": "SERIAL",
           "nullable": false,
           "default": null,
-          "comment": "Primary key auto-increment scorecard rule"
+          "comment": "Primary key auto-increment scorecard rule",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "rule_code",
           "type": "VARCHAR(50)",
           "nullable": false,
           "default": null,
-          "comment": "Kode unik rule scorecard kredit (misal: SCR-MICRO-01)"
+          "comment": "Kode unik rule scorecard kredit (misal: SCR-MICRO-01)",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "rule_name",
           "type": "VARCHAR(100)",
           "nullable": false,
           "default": null,
-          "comment": "Nama deskriptif scorecard rule | Field rule_name pada scoring.scorecard_rules"
+          "comment": "Nama deskriptif scorecard rule | Field rule_name pada scoring.scorecard_rules",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "weight_percentage",
           "type": "NUMERIC(5,2)",
           "nullable": false,
           "default": null,
-          "comment": "Bobot persentase kontribusi rule terhadap skor final"
+          "comment": "Bobot persentase kontribusi rule terhadap skor final",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "cutoff_score",
           "type": "INT",
           "nullable": false,
           "default": "600",
-          "comment": "Ambang batas nilai kelulusan kredit"
+          "comment": "Ambang batas nilai kelulusan kredit",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "is_active",
           "type": "BOOLEAN",
           "nullable": false,
           "default": "TRUE",
-          "comment": "Flag status keaktifan rule | Field is_active pada scoring.scorecard_rules"
+          "comment": "Flag status keaktifan rule | Field is_active pada scoring.scorecard_rules",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "created_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu pembuatan record | Field created_at pada scoring.scorecard_rules"
+          "comment": "Waktu pembuatan record | Field created_at pada scoring.scorecard_rules",
+          "pii": false,
+          "data_rules": ""
         },
         {
           "name": "updated_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu pembaruan record | Field updated_at pada scoring.scorecard_rules"
+          "comment": "Waktu pembaruan record | Field updated_at pada scoring.scorecard_rules",
+          "pii": false,
+          "data_rules": ""
         }
       ],
       "primaryKey": {

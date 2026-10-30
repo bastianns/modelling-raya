@@ -189,37 +189,36 @@
 
     <div class="header">
         <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
-        <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture</p>
+        <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG Architecture</p>
         <div class="meta-badges">
-            <span class="badge">Generated: 2026-10-30 11:25:20</span>
-            <span class="badge">Total Tabel: 10</span>
+            <span class="badge">Generated: 2026-10-30 15:41:41</span>
+            <span class="badge">Total Tabel: 9</span>
             <span class="badge">Total Relasi: 5</span>
-            <span class="badge">DASG Architecture: 11 Domains</span>
+            <span class="badge">Arsitektur Domain: 11 Domain</span>
         </div>
     </div>
 
     <div class="linter-box">
-        <div class="linter-title">🛡️ Shift-Left Linter Integrity Summary:</div>
-        <div>• <b>WARN-01 (Orphan Tables):</b> <code>legacy.collateral_registers</code> & <code>datamart.rpt_slik_ojk</code> terdeteksi sebagai tabel snapshot/register independen.</div>
-        <div>• <b>WARN-02 (Type Divergence):</b> <code>channel.loan_disbursements.application_id (VARCHAR(36))</code> mereferensikan <code>scoring.credit_applications.application_id (UUID)</code> lintas engine.</div>
-        <div>• <b>WARN-03 (PK & Contracts):</b> 8/8 tabel memiliki Primary Key valid; kontrak dbt <code>not_null</code> 100% tervalidasi.</div>
+        <div class="linter-title">🛡️ Shift-Left Linter & Governance Integrity Summary:</div>
+        <div>• <b>Enterprise Governance:</b> Sinkronisasi multi-platform metadata otomatis dengan validasi DAMA-DMBOK V.2.</div>
+        <div>• <b>Zero-Manual Automation:</b> Skema terpadu dikompilasi secara deterministik untuk ChartDB, Azimutt, dan Data Catalog.</div>
     </div>
 
     <div class="dasg-bar">
-        <div class="dasg-header">Bank Raya DASG 11-Domain Filter (Driven by dbt YAML metadata):</div>
+        <div class="dasg-header">Bank Raya DASG Domain Filter:</div>
         <div class="dasg-buttons">
-            <button class="dasg-btn active" onclick="filterByDASG('all', this)">All Domains (11)</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_01', this)">Domain 1: CIF</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_02', this)">Domain 2: Scoring</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_03', this)">Domain 3: Channels</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_04', this)">Domain 4: Collateral</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_05', this)">Domain 5: SLIK OJK</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_06', this)">Domain 6: Raw</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_07', this)">Domain 7: Staging</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_08', this)">Domain 8: Mart</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_09', this)">Domain 9: BI</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_10', this)">Domain 10: Risk</button>
-            <button class="dasg-btn" onclick="filterByDASG('domain_11', this)">Domain 11: Governance</button>
+            <button class="dasg-btn active" onclick="filterByDASG('all', this)">Semua Domain</button>
+            <button class="dasg-btn" onclick="filterByDASG('deposit', this)">Deposit</button>
+            <button class="dasg-btn" onclick="filterByDASG('transactions', this)">Transactions</button>
+            <button class="dasg-btn" onclick="filterByDASG('lending', this)">Lending</button>
+            <button class="dasg-btn" onclick="filterByDASG('facility', this)">Facility</button>
+            <button class="dasg-btn" onclick="filterByDASG('support_data', this)">Support Data</button>
+            <button class="dasg-btn" onclick="filterByDASG('reporting', this)">Reporting</button>
+            <button class="dasg-btn" onclick="filterByDASG('partnership', this)">Partnership</button>
+            <button class="dasg-btn" onclick="filterByDASG('corporate_strategy', this)">Corporate Strategy</button>
+            <button class="dasg-btn" onclick="filterByDASG('community_branch', this)">Community Branch</button>
+            <button class="dasg-btn" onclick="filterByDASG('core_banking', this)">Core Banking</button>
+            <button class="dasg-btn" onclick="filterByDASG('customer', this)">Customer</button>
         </div>
     </div>
 
@@ -405,9 +404,6 @@ erDiagram
         INT score_value
     }
     scoring_credit_applications {
-        NUMERIC_15_2_ monthly_income
-    }
-    scoring_credit_applications {
         VARCHAR_20_ application_status
     }
     scoring_credit_applications {
@@ -429,21 +425,6 @@ erDiagram
         VARCHAR_100_ detection_rule
     }
     scoring_fraud_audit_events {
-        TIMESTAMP flagged_at
-    }
-    scoring_risk_blacklist {
-        UUID blacklist_id
-    }
-    scoring_risk_blacklist {
-        VARCHAR_20_ customer_cif
-    }
-    scoring_risk_blacklist {
-        VARCHAR_255_ blacklist_reason
-    }
-    scoring_risk_blacklist {
-        BOOLEAN is_active
-    }
-    scoring_risk_blacklist {
         TIMESTAMP flagged_at
     }
     scoring_scorecard_rules {
@@ -1051,13 +1032,6 @@ erDiagram
                     </tr>
             
                     <tr>
-                        <td><strong>monthly_income</strong></td>
-                        <td><span class="type-pill">NUMERIC(15,2)</span></td>
-                        <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Estimasi penghasilan bulanan nasabah pemohon kredit</td>
-                    </tr>
-            
-                    <tr>
                         <td><strong>application_status</strong></td>
                         <td><span class="type-pill">VARCHAR(20)</span></td>
                         <td><small style="color: var(--muted);">NOT NULL</small></td>
@@ -1137,67 +1111,6 @@ erDiagram
                         <td><span class="type-pill">TIMESTAMP</span></td>
                         <td><small style="color: var(--muted);">NOT NULL</small></td>
                         <td>Waktu deteksi event anomali kecurangan dicatat</td>
-                    </tr>
-            
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="table-card" data-table="scoring.risk_blacklist" data-domain="unassigned" data-subdomain="general">
-            <div class="table-header">
-                <div>
-                    <div class="table-title">scoring.risk_blacklist</div>
-                    <div class="table-desc">Daftar hitam risiko fraud dan penolakan kredit Bank Raya</div>
-                </div>
-                <div class="badge-group">
-                    <span class="dasg-badge">DASG: unassigned / general</span>
-                    <span class="table-badge">scoring</span>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 25%;">Nama Kolom</th>
-                        <th style="width: 20%;">Tipe Data</th>
-                        <th style="width: 15%;">Atribut</th>
-                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
-                    </tr>
-                </thead>
-                <tbody>
-        
-                    <tr>
-                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> blacklist_id</strong></td>
-                        <td><span class="type-pill">UUID</span></td>
-                        <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Primary key UUID catatan blacklist</td>
-                    </tr>
-            
-                    <tr>
-                        <td><strong>customer_cif</strong></td>
-                        <td><span class="type-pill">VARCHAR(20)</span></td>
-                        <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Nomor CIF nasabah yang masuk daftar hitam</td>
-                    </tr>
-            
-                    <tr>
-                        <td><strong>blacklist_reason</strong></td>
-                        <td><span class="type-pill">VARCHAR(255)</span></td>
-                        <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Alasan nasabah dimasukkan dalam daftar hitam</td>
-                    </tr>
-            
-                    <tr>
-                        <td><strong>is_active</strong></td>
-                        <td><span class="type-pill">BOOLEAN</span></td>
-                        <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Field is_active pada scoring.risk_blacklist</td>
-                    </tr>
-            
-                    <tr>
-                        <td><strong>flagged_at</strong></td>
-                        <td><span class="type-pill">TIMESTAMP</span></td>
-                        <td><small style="color: var(--muted);">NULL</small></td>
-                        <td>Field flagged_at pada scoring.risk_blacklist</td>
                     </tr>
             
                 </tbody>
@@ -1322,7 +1235,7 @@ erDiagram
                 const cardDomain = card.getAttribute('data-domain');
 
                 const matchesQuery = text.includes(query);
-                const matchesDomain = (currentDomain === 'all' || cardDomain === currentDomain);
+                const matchesDomain = (currentDomain === 'all' || cardDomain.includes(currentDomain) || currentDomain.includes(cardDomain));
 
                 if (matchesQuery && matchesDomain) {
                     card.style.display = 'block';

@@ -10,7 +10,7 @@
       "kind": {
         "kind": "JsonLocalFile",
         "name": "bank_raya_unified_schema.json",
-        "size": 26034,
+        "size": 28180,
         "modified": 1729900000000
       },
       "content": [],
@@ -579,15 +579,6 @@
               }
             },
             {
-              "name": "monthly_income",
-              "type": "NUMERIC(15,2)",
-              "nullable": false,
-              "default": "0.00",
-              "comment": {
-                "text": "Estimasi penghasilan bulanan nasabah pemohon kredit"
-              }
-            },
-            {
               "name": "application_status",
               "type": "VARCHAR(20)",
               "nullable": false,
@@ -691,63 +682,6 @@
           },
           "comment": {
             "text": "Tabel scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit"
-          }
-        },
-        {
-          "schema": "scoring",
-          "table": "risk_blacklist",
-          "columns": [
-            {
-              "name": "blacklist_id",
-              "type": "UUID",
-              "nullable": false,
-              "default": "gen_random_uuid()",
-              "comment": {
-                "text": "Primary key UUID catatan blacklist"
-              }
-            },
-            {
-              "name": "customer_cif",
-              "type": "VARCHAR(20)",
-              "nullable": false,
-              "comment": {
-                "text": "Nomor CIF nasabah yang masuk daftar hitam"
-              }
-            },
-            {
-              "name": "blacklist_reason",
-              "type": "VARCHAR(255)",
-              "nullable": false,
-              "comment": {
-                "text": "Alasan nasabah dimasukkan dalam daftar hitam"
-              }
-            },
-            {
-              "name": "is_active",
-              "type": "BOOLEAN",
-              "nullable": false,
-              "default": "TRUE",
-              "comment": {
-                "text": "Field is_active pada scoring.risk_blacklist"
-              }
-            },
-            {
-              "name": "flagged_at",
-              "type": "TIMESTAMP",
-              "default": "CURRENT_TIMESTAMP",
-              "comment": {
-                "text": "Field flagged_at pada scoring.risk_blacklist"
-              }
-            }
-          ],
-          "primaryKey": {
-            "name": "pk_risk_blacklist",
-            "columns": [
-              "blacklist_id"
-            ]
-          },
-          "comment": {
-            "text": "Daftar hitam risiko fraud dan penolakan kredit Bank Raya"
           }
         },
         {
@@ -929,7 +863,7 @@
           },
           "size": {
             "width": 260,
-            "height": 278
+            "height": 256
           },
           "color": "blue",
           "columns": [
@@ -940,7 +874,6 @@
             "tenor_months",
             "risk_tier",
             "score_value",
-            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -1212,7 +1145,7 @@
           },
           "size": {
             "width": 260,
-            "height": 278
+            "height": 256
           },
           "color": "blue",
           "columns": [
@@ -1223,7 +1156,6 @@
             "tenor_months",
             "risk_tier",
             "score_value",
-            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -1476,7 +1408,7 @@
           },
           "size": {
             "width": 260,
-            "height": 278
+            "height": 256
           },
           "color": "indigo",
           "columns": [
@@ -1487,7 +1419,6 @@
             "tenor_months",
             "risk_tier",
             "score_value",
-            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -1568,7 +1499,7 @@
           },
           "size": {
             "width": 260,
-            "height": 278
+            "height": 256
           },
           "color": "indigo",
           "columns": [
@@ -1579,7 +1510,6 @@
             "tenor_months",
             "risk_tier",
             "score_value",
-            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -2227,7 +2157,7 @@
           },
           "size": {
             "width": 260,
-            "height": 278
+            "height": 256
           },
           "color": "blue",
           "columns": [
@@ -2238,7 +2168,6 @@
             "tenor_months",
             "risk_tier",
             "score_value",
-            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
