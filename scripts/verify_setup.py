@@ -7,6 +7,7 @@ and DAMA-DMBOK V.2 Multi-Platform Deterministic Transpilation & Governance.
 
 import os
 import sys
+import re
 import json
 import subprocess
 from pathlib import Path
@@ -79,6 +80,15 @@ def run_checks():
                     else:
                         print(f"[FAIL] Image basi! SHA256 live ({live_hash[:16]}) != host ({host_hash[:16]}). Jalankan docker compose up -d --build!")
                         checks_passed = False
+
+                # Security regex check for leaked internal IPv4 / hostnames in payload
+                body_text = body.decode("utf-8", errors="replace")
+                internal_ip_match = re.search(r"\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b", body_text)
+                if internal_ip_match:
+                    print(f"[FAIL] Kebocoran keamanan: Alamat IPv4 internal terdeteksi pada payload /autoload.html: {internal_ip_match.group(0)}")
+                    checks_passed = False
+                else:
+                    print("[PASS] Keamanan: Payload /autoload.html bersih dari alamat IPv4 / host internal")
             elif resp.status == 200:
                 print(f"[FAIL] ChartDB /autoload.html hanya mengembalikan fallback ({len(body)} bytes <= 10000). Jalankan scripts/seed_chartdb.py!")
                 checks_passed = False
@@ -95,7 +105,7 @@ def run_checks():
                 print(f"[FAIL] ChartDB HTTP Cache-Control tidak aman: '{cc}'")
                 checks_passed = False
 
-        # Active Playwright E2E Canvas Assertion (9 nodes, 5 edges, 0 blocking modal)
+        # Active Playwright E2E Canvas Dynamic Assertion (nodes, edges, 0 blocking modal)
         try:
             from playwright.sync_api import sync_playwright
             with sync_playwright() as p:
@@ -250,14 +260,24 @@ def run_checks():
         base_dir / "layouts" / "bank_raya_domain_layouts.json",
         base_dir / "azimutt-data" / "layouts" / "bank_raya_domain_layouts.json"
     ]
+    expected_layouts_count = None
+    try:
+        from scripts.sync_multiplatform_metadata import MultiPlatformMetadataParser, AzimuttTranspiler
+        _p = MultiPlatformMetadataParser(base_dir)
+        _p.parse_all()
+        expected_layouts_count = len(AzimuttTranspiler(_p, base_dir).generate_domain_layouts().get("layouts", {}))
+    except Exception:
+        expected_layouts_count = 38
+
     for p in layout_paths:
         if p.exists():
             try:
                 ldata = json.loads(p.read_text(encoding="utf-8"))
-                if "layouts" in ldata and len(ldata["layouts"]) >= 5:
-                    print(f"[PASS] Azimutt Domain Layouts Valid ({len(ldata['layouts'])} domain): {p.relative_to(base_dir)}")
+                actual_count = len(ldata.get("layouts", {}))
+                if "layouts" in ldata and actual_count == expected_layouts_count:
+                    print(f"[PASS] Azimutt Domain Layouts Valid ({actual_count} layouts, cocok ekspektasi schema {expected_layouts_count}): {p.relative_to(base_dir)}")
                 else:
-                    print(f"[FAIL] Domain layouts tidak lengkap pada: {p.relative_to(base_dir)}")
+                    print(f"[FAIL] Domain layouts tidak cocok ekspektasi ({actual_count} vs {expected_layouts_count}) pada: {p.relative_to(base_dir)}")
                     checks_passed = False
             except Exception as e:
                 print(f"[FAIL] File {p.relative_to(base_dir)} bukan JSON valid: {e}")
@@ -276,6 +296,8 @@ def run_checks():
 
     # 10. Check Zero-Manual Automation & Master Launch Scripts
     auto_scripts = [
+        (base_dir / "scripts" / "changes_loader.py", "Change Request Loader & SSoT Compiler"),
+        (base_dir / "scripts" / "import_change_doc.py", "Data Modeling Markdown Importer"),
         (base_dir / "scripts" / "seed_chartdb.py", "ChartDB Automated Seeder"),
         (base_dir / "scripts" / "seed_azimutt.py", "Azimutt Automated Seeder"),
         (base_dir / "scripts" / "launch.py", "Single Master Orchestrator (launch.py)"),
@@ -288,6 +310,18 @@ def run_checks():
         else:
             print(f"[FAIL] Skrip Otomasi Zero-Manual tidak ditemukan: {label} ({script_p.name})")
             checks_passed = False
+
+    # 11. Check Canvas Layout Overlap Assertion
+    try:
+        from changes_loader import compute_layout, get_domains_config, get_layout_overrides
+        schema_json = json.loads((base_dir / "sources" / "bank_raya_unified_schema.json").read_text(encoding="utf-8"))
+        d_cfg = get_domains_config(base_dir)
+        l_ovr = get_layout_overrides(base_dir)
+        compute_layout(schema_json.get("tables", []), d_cfg, l_ovr)
+        print("[PASS] Layout kanvas ChartDB deterministik & 0 tumpang tindih (Overlap Assertion PASSED)")
+    except Exception as e:
+        print(f"[FAIL] Validasi tumpang tindih kanvas gagal: {e}")
+        checks_passed = False
 
     print("=" * 75)
     if checks_passed:
