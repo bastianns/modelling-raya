@@ -92,6 +92,26 @@ COMMENT ON COLUMN legacy.collateral_registers.registered_at IS 'Waktu pencatatan
 
 -- ------------------------------------------------------------------------------
 -- Platform: PostgreSQL 16 (Core OLTP)
+-- Table: scoring.risk_blacklist
+-- ------------------------------------------------------------------------------
+CREATE TABLE scoring.risk_blacklist (
+    blacklist_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    customer_cif VARCHAR(20) NOT NULL,
+    blacklist_reason VARCHAR(255) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    flagged_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_risk_blacklist PRIMARY KEY (blacklist_id)
+);
+
+COMMENT ON TABLE scoring.risk_blacklist IS 'Daftar hitam risiko fraud dan penolakan kredit Bank Raya';
+COMMENT ON COLUMN scoring.risk_blacklist.blacklist_id IS 'Primary key UUID catatan blacklist';
+COMMENT ON COLUMN scoring.risk_blacklist.customer_cif IS 'Nomor CIF nasabah yang masuk daftar hitam';
+COMMENT ON COLUMN scoring.risk_blacklist.blacklist_reason IS 'Alasan nasabah dimasukkan dalam daftar hitam';
+COMMENT ON COLUMN scoring.risk_blacklist.is_active IS 'Field is_active pada scoring.risk_blacklist';
+COMMENT ON COLUMN scoring.risk_blacklist.flagged_at IS 'Field flagged_at pada scoring.risk_blacklist';
+
+-- ------------------------------------------------------------------------------
+-- Platform: PostgreSQL 16 (Core OLTP) + PostgreSQL OLTP
 -- Table: scoring.scorecard_rules
 -- ------------------------------------------------------------------------------
 CREATE TABLE scoring.scorecard_rules (
@@ -109,12 +129,12 @@ CREATE TABLE scoring.scorecard_rules (
 COMMENT ON TABLE scoring.scorecard_rules IS 'Master scorecard rules untuk kalkulasi credit scoring nasabah Bank Raya | DASG: domain_02/subdomain_02_1 | dbt Source: Master aturan pembobotan scorecard evaluasi risiko';
 COMMENT ON COLUMN scoring.scorecard_rules.rule_id IS 'Primary key auto-increment scorecard rule';
 COMMENT ON COLUMN scoring.scorecard_rules.rule_code IS 'Kode unik rule scorecard kredit (misal: SCR-MICRO-01)';
-COMMENT ON COLUMN scoring.scorecard_rules.rule_name IS 'Nama deskriptif scorecard rule';
+COMMENT ON COLUMN scoring.scorecard_rules.rule_name IS 'Nama deskriptif scorecard rule | Field rule_name pada scoring.scorecard_rules';
 COMMENT ON COLUMN scoring.scorecard_rules.weight_percentage IS 'Bobot persentase kontribusi rule terhadap skor final';
 COMMENT ON COLUMN scoring.scorecard_rules.cutoff_score IS 'Ambang batas nilai kelulusan kredit';
-COMMENT ON COLUMN scoring.scorecard_rules.is_active IS 'Flag status keaktifan rule';
-COMMENT ON COLUMN scoring.scorecard_rules.created_at IS 'Waktu pembuatan record';
-COMMENT ON COLUMN scoring.scorecard_rules.updated_at IS 'Waktu pembaruan record';
+COMMENT ON COLUMN scoring.scorecard_rules.is_active IS 'Flag status keaktifan rule | Field is_active pada scoring.scorecard_rules';
+COMMENT ON COLUMN scoring.scorecard_rules.created_at IS 'Waktu pembuatan record | Field created_at pada scoring.scorecard_rules';
+COMMENT ON COLUMN scoring.scorecard_rules.updated_at IS 'Waktu pembaruan record | Field updated_at pada scoring.scorecard_rules';
 
 -- ------------------------------------------------------------------------------
 -- Platform: Google BigQuery (OLAP Data Lakehouse - Staging)
@@ -169,7 +189,7 @@ COMMENT ON COLUMN datamart.fct_credit_scoring.scoring_details IS 'Struktur detai
 COMMENT ON COLUMN datamart.fct_credit_scoring.scoring_date IS 'Tanggal dan waktu evaluasi credit scoring';
 
 -- ------------------------------------------------------------------------------
--- Platform: PostgreSQL 16 (Core OLTP)
+-- Platform: PostgreSQL 16 (Core OLTP) + PostgreSQL OLTP
 -- Table: scoring.credit_applications
 -- ------------------------------------------------------------------------------
 CREATE TABLE scoring.credit_applications (
@@ -180,6 +200,7 @@ CREATE TABLE scoring.credit_applications (
     tenor_months INT NOT NULL DEFAULT 12,
     risk_tier VARCHAR(5) NOT NULL,
     score_value INT NOT NULL,
+    monthly_income NUMERIC(15,2) NOT NULL DEFAULT 0.00,
     application_status VARCHAR(20) NOT NULL DEFAULT 'IN_REVIEW',
     submitted_at TIMESTAMP WITH TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP WITH TIME ZONE NULL,
@@ -191,12 +212,13 @@ COMMENT ON COLUMN scoring.credit_applications.application_id IS 'UUID unik penga
 COMMENT ON COLUMN scoring.credit_applications.customer_cif IS 'Nomor CIF nasabah Bank Raya';
 COMMENT ON COLUMN scoring.credit_applications.rule_id IS 'Foreign key ke master scorecard rules';
 COMMENT ON COLUMN scoring.credit_applications.requested_amount IS 'Nominal pinjaman yang diajukan dalam IDR';
-COMMENT ON COLUMN scoring.credit_applications.tenor_months IS 'Jangka waktu pinjaman dalam bulan';
+COMMENT ON COLUMN scoring.credit_applications.tenor_months IS 'Jangka waktu pinjaman dalam bulan | Field tenor_months pada scoring.credit_applications';
 COMMENT ON COLUMN scoring.credit_applications.risk_tier IS 'Klasifikasi profil risiko (TIER_1 s.d TIER_5)';
 COMMENT ON COLUMN scoring.credit_applications.score_value IS 'Nilai skor kredit hasil evaluasi engine';
+COMMENT ON COLUMN scoring.credit_applications.monthly_income IS 'Estimasi penghasilan bulanan nasabah pemohon kredit';
 COMMENT ON COLUMN scoring.credit_applications.application_status IS 'Status lifecycle pengajuan: IN_REVIEW, APPROVED, REJECTED, DISBURSED';
-COMMENT ON COLUMN scoring.credit_applications.submitted_at IS 'Waktu pengajuan diajukan';
-COMMENT ON COLUMN scoring.credit_applications.approved_at IS 'Waktu persetujuan pinjaman';
+COMMENT ON COLUMN scoring.credit_applications.submitted_at IS 'Waktu pengajuan diajukan | Field submitted_at pada scoring.credit_applications';
+COMMENT ON COLUMN scoring.credit_applications.approved_at IS 'Waktu persetujuan pinjaman | Field approved_at pada scoring.credit_applications';
 
 -- ------------------------------------------------------------------------------
 -- Platform: MySQL 8.0 / MariaDB (Channel OLTP)
@@ -239,7 +261,7 @@ CREATE TABLE scoring.fraud_audit_events (
     CONSTRAINT pk_fraud_audit_events PRIMARY KEY (event_id)
 );
 
-COMMENT ON TABLE scoring.fraud_audit_events IS 'Tabel penambahan dinamis scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit';
+COMMENT ON TABLE scoring.fraud_audit_events IS 'Tabel scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit';
 COMMENT ON COLUMN scoring.fraud_audit_events.event_id IS 'Primary key identifier event audit fraud';
 COMMENT ON COLUMN scoring.fraud_audit_events.application_id IS 'Foreign key referensi ke scoring.credit_applications';
 COMMENT ON COLUMN scoring.fraud_audit_events.fraud_risk_score IS 'Skor risiko kecurangan hasil kalkulasi model anomali';

@@ -191,8 +191,8 @@
         <h1>🏛️ Bank Raya Enterprise Data Catalog & Dictionary</h1>
         <p>Framework: DAMA-DMBOK V.2 & Bank Raya DASG 11-Domain Architecture</p>
         <div class="meta-badges">
-            <span class="badge">Generated: 2026-10-30 10:58:54</span>
-            <span class="badge">Total Tabel: 9</span>
+            <span class="badge">Generated: 2026-10-30 11:25:20</span>
+            <span class="badge">Total Tabel: 10</span>
             <span class="badge">Total Relasi: 5</span>
             <span class="badge">DASG Architecture: 11 Domains</span>
         </div>
@@ -405,6 +405,9 @@ erDiagram
         INT score_value
     }
     scoring_credit_applications {
+        NUMERIC_15_2_ monthly_income
+    }
+    scoring_credit_applications {
         VARCHAR_20_ application_status
     }
     scoring_credit_applications {
@@ -426,6 +429,21 @@ erDiagram
         VARCHAR_100_ detection_rule
     }
     scoring_fraud_audit_events {
+        TIMESTAMP flagged_at
+    }
+    scoring_risk_blacklist {
+        UUID blacklist_id
+    }
+    scoring_risk_blacklist {
+        VARCHAR_20_ customer_cif
+    }
+    scoring_risk_blacklist {
+        VARCHAR_255_ blacklist_reason
+    }
+    scoring_risk_blacklist {
+        BOOLEAN is_active
+    }
+    scoring_risk_blacklist {
         TIMESTAMP flagged_at
     }
     scoring_scorecard_rules {
@@ -1015,7 +1033,7 @@ erDiagram
                         <td><strong>tenor_months</strong></td>
                         <td><span class="type-pill">INT</span></td>
                         <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Jangka waktu pinjaman dalam bulan</td>
+                        <td>Jangka waktu pinjaman dalam bulan | Field tenor_months pada scoring.credit_applications</td>
                     </tr>
             
                     <tr>
@@ -1033,6 +1051,13 @@ erDiagram
                     </tr>
             
                     <tr>
+                        <td><strong>monthly_income</strong></td>
+                        <td><span class="type-pill">NUMERIC(15,2)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Estimasi penghasilan bulanan nasabah pemohon kredit</td>
+                    </tr>
+            
+                    <tr>
                         <td><strong>application_status</strong></td>
                         <td><span class="type-pill">VARCHAR(20)</span></td>
                         <td><small style="color: var(--muted);">NOT NULL</small></td>
@@ -1043,14 +1068,14 @@ erDiagram
                         <td><strong>submitted_at</strong></td>
                         <td><span class="type-pill">TIMESTAMPTZ</span></td>
                         <td><small style="color: var(--muted);">NULL</small></td>
-                        <td>Waktu pengajuan diajukan</td>
+                        <td>Waktu pengajuan diajukan | Field submitted_at pada scoring.credit_applications</td>
                     </tr>
             
                     <tr>
                         <td><strong>approved_at</strong></td>
                         <td><span class="type-pill">TIMESTAMPTZ</span></td>
                         <td><small style="color: var(--muted);">NULL</small></td>
-                        <td>Waktu persetujuan pinjaman</td>
+                        <td>Waktu persetujuan pinjaman | Field approved_at pada scoring.credit_applications</td>
                     </tr>
             
                 </tbody>
@@ -1061,7 +1086,7 @@ erDiagram
             <div class="table-header">
                 <div>
                     <div class="table-title">scoring.fraud_audit_events</div>
-                    <div class="table-desc">Tabel penambahan dinamis scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit</div>
+                    <div class="table-desc">Tabel scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit</div>
                 </div>
                 <div class="badge-group">
                     <span class="dasg-badge">DASG: domain_02 / subdomain_02_2</span>
@@ -1118,6 +1143,67 @@ erDiagram
             </table>
         </div>
         
+        <div class="table-card" data-table="scoring.risk_blacklist" data-domain="unassigned" data-subdomain="general">
+            <div class="table-header">
+                <div>
+                    <div class="table-title">scoring.risk_blacklist</div>
+                    <div class="table-desc">Daftar hitam risiko fraud dan penolakan kredit Bank Raya</div>
+                </div>
+                <div class="badge-group">
+                    <span class="dasg-badge">DASG: unassigned / general</span>
+                    <span class="table-badge">scoring</span>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Nama Kolom</th>
+                        <th style="width: 20%;">Tipe Data</th>
+                        <th style="width: 15%;">Atribut</th>
+                        <th style="width: 40%;">Deskripsi Bisnis / Metrik</th>
+                    </tr>
+                </thead>
+                <tbody>
+        
+                    <tr>
+                        <td><strong><span class="pk-icon" title="Primary Key">🔑 PK</span> blacklist_id</strong></td>
+                        <td><span class="type-pill">UUID</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Primary key UUID catatan blacklist</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>customer_cif</strong></td>
+                        <td><span class="type-pill">VARCHAR(20)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Nomor CIF nasabah yang masuk daftar hitam</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>blacklist_reason</strong></td>
+                        <td><span class="type-pill">VARCHAR(255)</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Alasan nasabah dimasukkan dalam daftar hitam</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>is_active</strong></td>
+                        <td><span class="type-pill">BOOLEAN</span></td>
+                        <td><small style="color: var(--muted);">NOT NULL</small></td>
+                        <td>Field is_active pada scoring.risk_blacklist</td>
+                    </tr>
+            
+                    <tr>
+                        <td><strong>flagged_at</strong></td>
+                        <td><span class="type-pill">TIMESTAMP</span></td>
+                        <td><small style="color: var(--muted);">NULL</small></td>
+                        <td>Field flagged_at pada scoring.risk_blacklist</td>
+                    </tr>
+            
+                </tbody>
+            </table>
+        </div>
+        
         <div class="table-card" data-table="scoring.scorecard_rules" data-domain="domain_02" data-subdomain="subdomain_02_1">
             <div class="table-header">
                 <div>
@@ -1158,7 +1244,7 @@ erDiagram
                         <td><strong>rule_name</strong></td>
                         <td><span class="type-pill">VARCHAR(100)</span></td>
                         <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Nama deskriptif scorecard rule</td>
+                        <td>Nama deskriptif scorecard rule | Field rule_name pada scoring.scorecard_rules</td>
                     </tr>
             
                     <tr>
@@ -1179,21 +1265,21 @@ erDiagram
                         <td><strong>is_active</strong></td>
                         <td><span class="type-pill">BOOLEAN</span></td>
                         <td><small style="color: var(--muted);">NOT NULL</small></td>
-                        <td>Flag status keaktifan rule</td>
+                        <td>Flag status keaktifan rule | Field is_active pada scoring.scorecard_rules</td>
                     </tr>
             
                     <tr>
                         <td><strong>created_at</strong></td>
                         <td><span class="type-pill">TIMESTAMPTZ</span></td>
                         <td><small style="color: var(--muted);">NULL</small></td>
-                        <td>Waktu pembuatan record</td>
+                        <td>Waktu pembuatan record | Field created_at pada scoring.scorecard_rules</td>
                     </tr>
             
                     <tr>
                         <td><strong>updated_at</strong></td>
                         <td><span class="type-pill">TIMESTAMPTZ</span></td>
                         <td><small style="color: var(--muted);">NULL</small></td>
-                        <td>Waktu pembaruan record</td>
+                        <td>Waktu pembaruan record | Field updated_at pada scoring.scorecard_rules</td>
                     </tr>
             
                 </tbody>

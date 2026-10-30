@@ -503,7 +503,7 @@
           "type": "INT",
           "nullable": false,
           "default": "12",
-          "comment": "Jangka waktu pinjaman dalam bulan"
+          "comment": "Jangka waktu pinjaman dalam bulan | Field tenor_months pada scoring.credit_applications"
         },
         {
           "name": "risk_tier",
@@ -520,6 +520,13 @@
           "comment": "Nilai skor kredit hasil evaluasi engine"
         },
         {
+          "name": "monthly_income",
+          "type": "NUMERIC(15,2)",
+          "nullable": false,
+          "default": "0.00",
+          "comment": "Estimasi penghasilan bulanan nasabah pemohon kredit"
+        },
+        {
           "name": "application_status",
           "type": "VARCHAR(20)",
           "nullable": false,
@@ -531,14 +538,14 @@
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu pengajuan diajukan"
+          "comment": "Waktu pengajuan diajukan | Field submitted_at pada scoring.credit_applications"
         },
         {
           "name": "approved_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": null,
-          "comment": "Waktu persetujuan pinjaman"
+          "comment": "Waktu persetujuan pinjaman | Field approved_at pada scoring.credit_applications"
         }
       ],
       "primaryKey": {
@@ -615,7 +622,59 @@
       "uniques": [],
       "indexes": [],
       "checks": [],
-      "comment": "Tabel penambahan dinamis scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit"
+      "comment": "Tabel scoring.fraud_audit_events | DASG: domain_02/subdomain_02_2 | dbt Source: Event audit kecurangan dan log deteksi anomali pada aplikasi underwriting kredit"
+    },
+    {
+      "schema": "scoring",
+      "table": "risk_blacklist",
+      "name": "risk_blacklist",
+      "columns": [
+        {
+          "name": "blacklist_id",
+          "type": "UUID",
+          "nullable": false,
+          "default": "gen_random_uuid()",
+          "comment": "Primary key UUID catatan blacklist"
+        },
+        {
+          "name": "customer_cif",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "default": null,
+          "comment": "Nomor CIF nasabah yang masuk daftar hitam"
+        },
+        {
+          "name": "blacklist_reason",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "default": null,
+          "comment": "Alasan nasabah dimasukkan dalam daftar hitam"
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "nullable": false,
+          "default": "TRUE",
+          "comment": "Field is_active pada scoring.risk_blacklist"
+        },
+        {
+          "name": "flagged_at",
+          "type": "TIMESTAMP",
+          "nullable": true,
+          "default": "CURRENT_TIMESTAMP",
+          "comment": "Field flagged_at pada scoring.risk_blacklist"
+        }
+      ],
+      "primaryKey": {
+        "name": "pk_risk_blacklist",
+        "columns": [
+          "blacklist_id"
+        ]
+      },
+      "uniques": [],
+      "indexes": [],
+      "checks": [],
+      "comment": "Daftar hitam risiko fraud dan penolakan kredit Bank Raya"
     },
     {
       "schema": "scoring",
@@ -641,7 +700,7 @@
           "type": "VARCHAR(100)",
           "nullable": false,
           "default": null,
-          "comment": "Nama deskriptif scorecard rule"
+          "comment": "Nama deskriptif scorecard rule | Field rule_name pada scoring.scorecard_rules"
         },
         {
           "name": "weight_percentage",
@@ -662,21 +721,21 @@
           "type": "BOOLEAN",
           "nullable": false,
           "default": "TRUE",
-          "comment": "Flag status keaktifan rule"
+          "comment": "Flag status keaktifan rule | Field is_active pada scoring.scorecard_rules"
         },
         {
           "name": "created_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu pembuatan record"
+          "comment": "Waktu pembuatan record | Field created_at pada scoring.scorecard_rules"
         },
         {
           "name": "updated_at",
           "type": "TIMESTAMPTZ",
           "nullable": true,
           "default": "CURRENT_TIMESTAMP",
-          "comment": "Waktu pembaruan record"
+          "comment": "Waktu pembaruan record | Field updated_at pada scoring.scorecard_rules"
         }
       ],
       "primaryKey": {

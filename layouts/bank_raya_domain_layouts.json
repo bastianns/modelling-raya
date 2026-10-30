@@ -12,7 +12,7 @@
           },
           "size": {
             "width": 260,
-            "height": 256
+            "height": 278
           },
           "color": "blue",
           "columns": [
@@ -23,6 +23,7 @@
             "tenor_months",
             "risk_tier",
             "score_value",
+            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -273,7 +274,7 @@
           },
           "size": {
             "width": 260,
-            "height": 256
+            "height": 278
           },
           "color": "blue",
           "columns": [
@@ -284,6 +285,7 @@
             "tenor_months",
             "risk_tier",
             "score_value",
+            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -501,7 +503,7 @@
           },
           "size": {
             "width": 260,
-            "height": 256
+            "height": 278
           },
           "color": "indigo",
           "columns": [
@@ -512,6 +514,7 @@
             "tenor_months",
             "risk_tier",
             "score_value",
+            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
@@ -578,7 +581,7 @@
           },
           "size": {
             "width": 260,
-            "height": 256
+            "height": 278
           },
           "color": "indigo",
           "columns": [
@@ -589,6 +592,7 @@
             "tenor_months",
             "risk_tier",
             "score_value",
+            "monthly_income",
             "application_status",
             "submitted_at",
             "approved_at"
