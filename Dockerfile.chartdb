@@ -4,6 +4,8 @@ FROM ghcr.io/chartdb/chartdb@sha256:9385f1a72174a2cdba27036127a98474a0c941c3c795
 COPY sources/nginx_chartdb.conf /etc/nginx/conf.d/default.conf.template
 COPY sources/nginx_chartdb.conf /etc/nginx/conf.d/default.conf
 
-# Salin template autoload seeder mandiri dan skema ke dalam web root Nginx (SSoT Bake)
+# Salin template autoload seeder mandiri ke dalam web root Nginx (SSoT Bake).
+# CATATAN ARSITEKTUR KEAMANAN: bank_raya_unified_schema.json TIDAK disalin ke web root
+# karena seluruh payload skema sudah terenkapsulasi secara aman di dalam autoload.html,
+# sehingga mencegah kebocoran file skema statis secara publik via HTTP web root.
 COPY sources/autoload.html /usr/share/nginx/html/autoload.html
-COPY sources/bank_raya_unified_schema.json /usr/share/nginx/html/bank_raya_unified_schema.json

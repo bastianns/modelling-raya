@@ -1,0 +1,11 @@
+# Ignore local development, tests, raw change documents and manifests from Docker image
+changes/
+changes/**
+inputs/
+docs/
+tests/
+venv/
+.git/
+.gemini/
+*.pyc
+__pycache__/

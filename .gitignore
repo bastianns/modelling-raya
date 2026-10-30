@@ -20,3 +20,6 @@ azimutt-data/uploads/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Change request raw sources (internal documentation policy)
+changes/_source/
