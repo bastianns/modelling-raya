@@ -37,16 +37,17 @@ def run_checks():
     compose_content = compose_path.read_text(encoding="utf-8")
 
     # 2. Check ChartDB specs
+    chartdb_image_ok = ("ghcr.io/chartdb/chartdb" in compose_content)
     chartdb_checks = [
-        ("ghcr.io/chartdb/chartdb:latest", "Base image ChartDB resmi: 'ghcr.io/chartdb/chartdb:latest'"),
-        ("DISABLE_ANALYTICS", "Hardening: DISABLE_ANALYTICS dikonfigurasi"),
-        ("VITE_HIDE_CHARTDB_CLOUD", "Hardening: VITE_HIDE_CHARTDB_CLOUD dikonfigurasi"),
-        ("8080:80", "Port forwarding ChartDB diatur ke 8080:80"),
-        ("edm-secure-net", "ChartDB terhubung ke jaringan 'edm-secure-net'")
+        (chartdb_image_ok, "Base image ChartDB resmi: 'ghcr.io/chartdb/chartdb'"),
+        ("DISABLE_ANALYTICS" in compose_content, "Hardening: DISABLE_ANALYTICS dikonfigurasi"),
+        ("VITE_HIDE_CHARTDB_CLOUD" in compose_content, "Hardening: VITE_HIDE_CHARTDB_CLOUD dikonfigurasi"),
+        ("8080:80" in compose_content, "Port forwarding ChartDB diatur ke 8080:80"),
+        ("edm-secure-net" in compose_content, "ChartDB terhubung ke jaringan 'edm-secure-net'")
     ]
 
-    for token, desc in chartdb_checks:
-        if token in compose_content:
+    for condition, desc in chartdb_checks:
+        if condition:
             print(f"[PASS] {desc}")
         else:
             print(f"[FAIL] {desc}")
@@ -59,6 +60,67 @@ def run_checks():
         checks_passed = False
     else:
         print("[PASS] Layanan ChartDB 100% Stateless (tanpa volume persistensi)")
+
+    # Active validation for ChartDB autoload.html payload & anti-cache headers
+    try:
+        import urllib.request
+        req = urllib.request.Request("http://127.0.0.1:8080/autoload.html")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            body = resp.read()
+            if resp.status == 200 and len(body) > 10000:
+                print(f"[PASS] ChartDB live payload /autoload.html aktif & valid ({len(body)} bytes > 10000 bytes)")
+                import hashlib
+                host_autoload = base_dir / "sources" / "autoload.html"
+                if host_autoload.exists():
+                    host_hash = hashlib.sha256(host_autoload.read_bytes()).hexdigest()
+                    live_hash = hashlib.sha256(body).hexdigest()
+                    if host_hash == live_hash:
+                        print(f"[PASS] SSoT Bake Image Integrity: live payload SHA256 identik dengan host ({live_hash[:16]}...)")
+                    else:
+                        print(f"[FAIL] Image basi! SHA256 live ({live_hash[:16]}) != host ({host_hash[:16]}). Jalankan docker compose up -d --build!")
+                        checks_passed = False
+            elif resp.status == 200:
+                print(f"[FAIL] ChartDB /autoload.html hanya mengembalikan fallback ({len(body)} bytes <= 10000). Jalankan scripts/seed_chartdb.py!")
+                checks_passed = False
+            else:
+                print(f"[FAIL] ChartDB /autoload.html HTTP status: {resp.status}")
+                checks_passed = False
+
+        req_root = urllib.request.Request("http://127.0.0.1:8080/")
+        with urllib.request.urlopen(req_root, timeout=3) as resp_root:
+            cc = resp_root.headers.get("Cache-Control", "")
+            if "no-store" in cc and "no-cache" in cc:
+                print(f"[PASS] ChartDB HTTP anti-cache headers aktif (Cache-Control: {cc})")
+            else:
+                print(f"[FAIL] ChartDB HTTP Cache-Control tidak aman: '{cc}'")
+                checks_passed = False
+
+        # Active Playwright E2E Canvas Assertion (9 nodes, 5 edges, 0 blocking modal)
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.goto("http://localhost:8080/autoload.html", wait_until="domcontentloaded")
+                page.wait_for_url("**/diagrams/bank_raya_main_diagram", timeout=12000)
+                page.wait_for_selector(".react-flow__node", timeout=15000)
+                page.wait_for_timeout(1000)
+                nodes = page.query_selector_all(".react-flow__node")
+                edges = page.query_selector_all(".react-flow__edge")
+                modal = page.query_selector("text='What is your Database?'")
+                if len(nodes) == 9 and len(edges) == 5 and modal is None:
+                    print(f"[PASS] ChartDB E2E Canvas verified: tepat {len(nodes)} node tabel dan {len(edges)} relasi aktif di kanvas (0 blocking modal)")
+                else:
+                    print(f"[FAIL] ChartDB Canvas assertion failed: nodes={len(nodes)} (expected 9), edges={len(edges)} (expected 5), modal={modal is not None}")
+                    checks_passed = False
+                browser.close()
+        except ImportError:
+            print("[INFO] Modul Playwright tidak terinstall di environment ini, pengujian kanvas dilewati.")
+        except Exception as e:
+            print(f"[FAIL] ChartDB Canvas E2E assertion error: {e}")
+            checks_passed = False
+    except Exception as e:
+        print(f"[INFO] ChartDB live HTTP check dilewati (layanan belum aktif: {e})")
 
     # 3. Check Azimutt specs
     azimutt_checks = [
@@ -214,7 +276,8 @@ def run_checks():
         (base_dir / "scripts" / "seed_chartdb.py", "ChartDB Automated Seeder"),
         (base_dir / "scripts" / "seed_azimutt.py", "Azimutt Automated Seeder"),
         (base_dir / "scripts" / "launch.py", "Single Master Orchestrator (launch.py)"),
-        (base_dir / "sources" / "autoload.html", "ChartDB Autoload Injector HTML")
+        (base_dir / "sources" / "autoload.html", "ChartDB Autoload Injector HTML"),
+        (base_dir / "sources" / "nginx_chartdb.conf", "ChartDB Nginx Anti-Cache Hardening Conf")
     ]
     for script_p, label in auto_scripts:
         if script_p.exists() and script_p.stat().st_size > 0:

@@ -60,7 +60,7 @@ def run_step(step_num: int, title: str, cmd_list: list, cwd: Path) -> bool:
 def main():
     parser = argparse.ArgumentParser(description="Bank Raya Enterprise Data Architecture Launcher")
     parser.add_argument("--no-browser", action="store_true", help="Do not launch web browsers after initialization (for CI/CD)")
-    parser.add_argument("--skip-docker", action="store_true", help="Skip docker compose up check")
+    parser.add_argument("--skip-docker", action="store_true", help="Skip docker compose up --build check")
     args = parser.parse_args()
 
     base_dir = Path(__file__).resolve().parent.parent
@@ -73,53 +73,39 @@ def main():
     print("=" * 80)
 
     # -------------------------------------------------------------------------
-    # Step 1: Ensure Docker containers are running
+    # Step 1: Run Multi-Platform Transpiler & Shift-Left Linter
     # -------------------------------------------------------------------------
-    if not args.skip_docker:
-        print("\n[1/6] Verifying Docker containers (chartdb-app, azimutt-app, azimutt-backend-db)...")
-        docker_cmd = [docker_bin, "compose", "up", "-d"]
-        try:
-            res = subprocess.run(docker_cmd, cwd=str(base_dir), capture_output=True, text=True, check=False)
-            if res.returncode == 0:
-                print("  [PASS] Docker containers are active and running.")
-            else:
-                print(f"  [WARN] docker compose up returned code {res.returncode}: {res.stderr.strip()}")
-        except Exception as e:
-            print(f"  [WARN] Could not execute docker compose: {e}")
-    else:
-        print("\n[1/6] Skipping Docker compose check (--skip-docker).")
+    step1_cmd = [py_exec, str(base_dir / "scripts" / "sync_multiplatform_metadata.py")]
+    if not run_step(1, "Syncing Multi-Platform Metadata & Running Shift-Left Linter", step1_cmd, base_dir):
+        print("\n[ERROR] Step 1 failed. Aborting launch.")
+        return 1
 
     # -------------------------------------------------------------------------
-    # Step 2: Run Multi-Platform Transpiler & Shift-Left Linter
+    # Step 2: Generate ChartDB Autoload HTML (Pre-Bake)
     # -------------------------------------------------------------------------
-    step2_cmd = [py_exec, str(base_dir / "scripts" / "sync_multiplatform_metadata.py")]
-    if not run_step(2, "Syncing Multi-Platform Metadata & Running Shift-Left Linter", step2_cmd, base_dir):
+    step2_cmd = [py_exec, str(base_dir / "scripts" / "seed_chartdb.py"), "--generate-only"]
+    if not run_step(2, "Generating ChartDB Autoload Seeder Payload", step2_cmd, base_dir):
         print("\n[ERROR] Step 2 failed. Aborting launch.")
         return 1
 
     # -------------------------------------------------------------------------
-    # Step 3: Generate Interactive Standalone Data Catalog & Mermaid ERD
+    # Step 3: Build & Start Containers (SSoT Bake via Docker Compose)
     # -------------------------------------------------------------------------
-    step3_cmd = [py_exec, str(base_dir / "scripts" / "generate_data_dictionary.py")]
-    if not run_step(3, "Generating Standalone Data Dictionary & ERD Catalog", step3_cmd, base_dir):
-        print("\n[ERROR] Step 3 failed. Aborting launch.")
-        return 1
+    if not args.skip_docker:
+        step3_cmd = [docker_bin, "compose", "up", "-d", "--build"]
+        if not run_step(3, "Building & Starting Containers (docker compose up -d --build)", step3_cmd, base_dir):
+            print("\n[ERROR] Step 3 failed. Aborting launch.")
+            return 1
+    else:
+        print("\n[3/6] Skipping Docker compose build & start (--skip-docker).")
 
     # -------------------------------------------------------------------------
-    # Step 4: Run ChartDB Automated Pre-Loader & IndexedDB Seeder
+    # Step 4: Generate Interactive Standalone Data Catalog & Mermaid ERD
     # -------------------------------------------------------------------------
-    step4_cmd = [py_exec, str(base_dir / "scripts" / "seed_chartdb.py")]
-    if not run_step(4, "Seeding ChartDB Workspace & Generating Autoload HTML", step4_cmd, base_dir):
+    step4_cmd = [py_exec, str(base_dir / "scripts" / "generate_data_dictionary.py")]
+    if not run_step(4, "Generating Standalone Data Dictionary & ERD Catalog", step4_cmd, base_dir):
         print("\n[ERROR] Step 4 failed. Aborting launch.")
         return 1
-
-    # Also copy bank_raya_unified_schema.json to chartdb-app so it serves as CORS endpoint
-    try:
-        schema_file = base_dir / "sources" / "bank_raya_unified_schema.json"
-        cp_cmd = [docker_bin, "cp", str(schema_file), "chartdb-app:/usr/share/nginx/html/bank_raya_unified_schema.json"]
-        subprocess.run(cp_cmd, capture_output=True, text=True, check=False)
-    except Exception:
-        pass
 
     # -------------------------------------------------------------------------
     # Step 5: Run Azimutt Project Pre-Seeding (Database & Samples)
@@ -141,20 +127,20 @@ def main():
     # Launch Web Browsers
     # -------------------------------------------------------------------------
     html_catalog_path = (base_dir / "docs" / "data_dictionary.html").resolve()
-    chartdb_url = "http://localhost:8080/autoload.html"
-    azimutt_url = "http://localhost:8000/create?json=/elm/samples/basic.azimutt.json"
+    chartdb_url = "http://localhost:8080"
+    chartdb_autoload_url = "http://localhost:8080/autoload.html"
+    azimutt_project_url = "http://localhost:8000/22222222-2222-4222-8222-222222222222/00000000-0000-4000-8000-000000000001"
     azimutt_login_url = "http://localhost:8000/login"
 
     print("\n" + "=" * 80)
     print("ALL DATA ARCHITECTURE SYSTEMS READY & SYNCHRONIZED!")
     print("=" * 80)
     print(f"1. Data Dictionary & Catalog:    {html_catalog_path.as_uri()}")
-    print(f"2. ChartDB Automated Canvas:     {chartdb_url}")
-    print(f"   (Atau akses langsung:          http://localhost:8080)")
-    print(f"3. Azimutt Instant Visual View:  {azimutt_url}")
-    print(f"   (Dashboard Organisasi:        {azimutt_login_url})")
+    print(f"2. ChartDB Canvas:               {chartdb_url}")
+    print(f"   (Direct Autoload Seeder:       {chartdb_autoload_url})")
+    print(f"3. Azimutt Project Portal:       {azimutt_login_url}")
     print(f"   -> Akun Admin / Owner:        bastiannatanaels@gmail.com")
-    print(f"   -> Kata Sandi:                SteiITB2026!")
+    print(f"   (Private Project Canvas:      {azimutt_project_url})")
     print("=" * 80)
 
     if not args.no_browser:
@@ -162,9 +148,9 @@ def main():
         try:
             webbrowser.open(html_catalog_path.as_uri())
             time.sleep(0.5)
-            webbrowser.open(chartdb_url)
+            webbrowser.open(chartdb_autoload_url)
             time.sleep(0.5)
-            webbrowser.open(azimutt_url)
+            webbrowser.open(azimutt_login_url)
             print("[PASS] Browsers launched successfully.")
         except Exception as e:
             print(f"[WARN] Could not automatically open browser: {e}")
