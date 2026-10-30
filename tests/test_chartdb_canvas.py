@@ -18,6 +18,16 @@ from playwright.async_api import async_playwright, expect
 SCREENSHOT_DIR = Path("docs/screenshots")
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
+SCHEMA_PATH = Path("sources/bank_raya_unified_schema.json")
+try:
+    with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
+        _schema = json.load(f)
+        EXP_NODES = len(_schema.get("tables", []))
+        EXP_EDGES = len(_schema.get("relations", []))
+except Exception:
+    EXP_NODES = 10
+    EXP_EDGES = 5
+
 async def run_profile_a(browser):
     print("\n" + "=" * 60)
     print("RUNNING PROFILE (A): Empty Profile (Fresh Browser Context)")
@@ -38,12 +48,12 @@ async def run_profile_a(browser):
     await page.wait_for_url("**/diagrams/bank_raya_main_diagram", timeout=15000)
     print(f"  [PASS] Redirected to URL: {page.url}")
 
-    # Assert 9 nodes and 5 edges render
+    # Assert nodes and edges render
     nodes_loc = page.locator(".react-flow__node")
     edges_loc = page.locator(".react-flow__edge")
-    await expect(nodes_loc).to_have_count(9, timeout=15000)
-    await expect(edges_loc).to_have_count(5, timeout=15000)
-    print("  [PASS] Detected exactly 9 nodes and 5 edges on canvas.")
+    await expect(nodes_loc).to_have_count(EXP_NODES, timeout=15000)
+    await expect(edges_loc).to_have_count(EXP_EDGES, timeout=15000)
+    print(f"  [PASS] Detected exactly {EXP_NODES} nodes and {EXP_EDGES} edges on canvas.")
 
     # Assert 'What is your Database?' dialog is NOT visible
     db_dialog = await page.query_selector("text='What is your Database?'")
@@ -115,9 +125,9 @@ async def run_profile_b(browser):
     # Navigate to autoload
     await page.goto("http://localhost:8080/autoload.html", wait_until="domcontentloaded")
     await page.wait_for_url("**/diagrams/bank_raya_main_diagram", timeout=15000)
-    await expect(page.locator(".react-flow__node")).to_have_count(9, timeout=15000)
-    await expect(page.locator(".react-flow__edge")).to_have_count(5, timeout=15000)
-    print("  [PASS] Bank Raya canvas rendered 9 nodes and 5 edges.")
+    await expect(page.locator(".react-flow__node")).to_have_count(EXP_NODES, timeout=15000)
+    await expect(page.locator(".react-flow__edge")).to_have_count(EXP_EDGES, timeout=15000)
+    print(f"  [PASS] Bank Raya canvas rendered {EXP_NODES} nodes and {EXP_EDGES} edges.")
 
     # Verify dummy diagram was NOT deleted
     has_dummy = await page.evaluate("""async () => {
@@ -154,13 +164,13 @@ async def run_profile_c(browser):
 
     await page.goto("http://localhost:8080/autoload.html", wait_until="domcontentloaded")
     await page.wait_for_url("**/diagrams/bank_raya_main_diagram", timeout=15000)
-    await expect(page.locator(".react-flow__node")).to_have_count(9, timeout=15000)
+    await expect(page.locator(".react-flow__node")).to_have_count(EXP_NODES, timeout=15000)
 
     print("  -> Pressing F5 / Reloading page directly at /diagrams/bank_raya_main_diagram...")
     await page.reload(wait_until="domcontentloaded")
-    await expect(page.locator(".react-flow__node")).to_have_count(9, timeout=15000)
-    await expect(page.locator(".react-flow__edge")).to_have_count(5, timeout=15000)
-    print("  [PASS] Nodes and edges retained after F5: exactly 9 nodes, 5 edges.")
+    await expect(page.locator(".react-flow__node")).to_have_count(EXP_NODES, timeout=15000)
+    await expect(page.locator(".react-flow__edge")).to_have_count(EXP_EDGES, timeout=15000)
+    print(f"  [PASS] Nodes and edges retained after F5: exactly {EXP_NODES} nodes, {EXP_EDGES} edges.")
 
     screenshot_path = SCREENSHOT_DIR / "canvas_profile_c.png"
     await page.screenshot(path=str(screenshot_path))
@@ -229,9 +239,9 @@ async def run_profile_d(browser):
     await page.wait_for_url("**/diagrams/bank_raya_main_diagram", timeout=15000)
     print(f"  [PASS] Successfully redirected after repair: {page.url}")
 
-    await expect(page.locator(".react-flow__node")).to_have_count(9, timeout=15000)
-    await expect(page.locator(".react-flow__edge")).to_have_count(5, timeout=15000)
-    print("  [PASS] Nodes and edges verified after repair: 9 nodes, 5 edges.")
+    await expect(page.locator(".react-flow__node")).to_have_count(EXP_NODES, timeout=15000)
+    await expect(page.locator(".react-flow__edge")).to_have_count(EXP_EDGES, timeout=15000)
+    print(f"  [PASS] Nodes and edges verified after repair: {EXP_NODES} nodes, {EXP_EDGES} edges.")
 
     screenshot_path = SCREENSHOT_DIR / "canvas_profile_d.png"
     await page.screenshot(path=str(screenshot_path))

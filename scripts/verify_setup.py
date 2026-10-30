@@ -108,10 +108,13 @@ def run_checks():
                 nodes = page.query_selector_all(".react-flow__node")
                 edges = page.query_selector_all(".react-flow__edge")
                 modal = page.query_selector("text='What is your Database?'")
-                if len(nodes) == 9 and len(edges) == 5 and modal is None:
+                schema_json = json.loads((base_dir / "sources" / "bank_raya_unified_schema.json").read_text(encoding="utf-8"))
+                exp_nodes = len(schema_json.get("tables", []))
+                exp_edges = len(schema_json.get("relations", []))
+                if len(nodes) == exp_nodes and len(edges) == exp_edges and modal is None:
                     print(f"[PASS] ChartDB E2E Canvas verified: tepat {len(nodes)} node tabel dan {len(edges)} relasi aktif di kanvas (0 blocking modal)")
                 else:
-                    print(f"[FAIL] ChartDB Canvas assertion failed: nodes={len(nodes)} (expected 9), edges={len(edges)} (expected 5), modal={modal is not None}")
+                    print(f"[FAIL] ChartDB Canvas assertion failed: nodes={len(nodes)} (expected {exp_nodes}), edges={len(edges)} (expected {exp_edges}), modal={modal is not None}")
                     checks_passed = False
                 browser.close()
         except ImportError:
